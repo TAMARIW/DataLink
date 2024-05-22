@@ -1,0 +1,3 @@
+[submodule "lib/rodos"]
+	path = lib/rodos
+	url = https://gitlab.com/rodos/rodos.git
