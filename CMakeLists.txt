@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(Datalink VERSION 0.1.0)
 
+#add RODOS
+add_subdirectory(lib/rodos)
+
 #add the udpipc library for communication with ORPE
 add_subdirectory(lib/udpipc)
 
-#add RODOS
-add_subdirectory(lib/rodos)
+#add orpe to use the data structs. Do not link as library.
+add_subdirectory(lib/ORPE)
 
 #Collect datalink source files add them to the executable
 file(GLOB_RECURSE SRC_FILES src/*.cpp)

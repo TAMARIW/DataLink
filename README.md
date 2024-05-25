@@ -6,4 +6,4 @@ All RODOS topics/messages comming from the WIFI and UART links will be forwarded
 ## Building instructions on RPI Zero 2
 mkdir build
 cd build
-cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/port/posix.cmake ..
+cmake -DCMAKE_TOOLCHAIN_FILE=../lib/rodos/cmake/port/posix.cmake ..

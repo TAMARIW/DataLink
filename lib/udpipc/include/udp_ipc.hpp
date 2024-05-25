@@ -1,6 +1,7 @@
 #ifndef UDP_IPC_HPP
 #define UDP_IPC_HPP
 
+#include <stdio.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/types.h> 
@@ -35,7 +36,7 @@ public:
 
     ~UdpIpc();
 
-    /**
+    /**#include <stdio.h>
      * @brief   Initialises the UPD communication. The port is determined using the channel. Both sender and receiver must have the same port.
      * @note    Errors will occur if different data types are send over the same channel.
      * @param   channel Used to create a port number. Only values > 0 are valid. Values < 1 will deinit. 
