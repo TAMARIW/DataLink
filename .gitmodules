@@ -4,3 +4,6 @@
 [submodule "lib/ORPE"]
 	path = lib/ORPE
 	url = https://gitlab.com/chst15/ORPE.git
+[submodule "lib/udpipc"]
+	path = lib/udpipc
+	url = https://gitlab.com/chst15/updipc.git
