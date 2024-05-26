@@ -44,24 +44,27 @@ struct ORPECommand {
 
 
 // Gateway setup
-HAL_UART uart(UART_IDX4);
-LinkinterfaceUART uart_linkinterface(&uart, 115200);
-Gateway uart_gateway(&uart_linkinterface, true);
-
 UDPInOut udp(-50000);
 LinkinterfaceUDP linkinterface(&udp);
 Gateway udp_gateway(&linkinterface, true);
+
+HAL_UART uart(UART_IDX4);
+LinkinterfaceUART uart_linkinterface(&uart, 115200);
+Gateway uart_gateway(&uart_linkinterface, true);
 
 //Gateway router 
 Router gatewayRouter(true, &uart_gateway, &udp_gateway);
 
 
 //Topics for communication with ORPE
-Topic<OrpeTelemetry> orpeEstTopic(1342, "ORPE telemetry");
+Topic<OrpeTelemetry> orpeEstTopic(1300, "ORPE telemetry");
+
+//Topics for testing the datalink
+Topic<float> datalinkTimeTopic(1301, "Datalink Time Testing");
 
 
 /**
- * Communicates with the ORPE proccess via the udpipc API.
+ * Communicates with the ORPE process via the udpipc API.
 */
 class ORPEDatalink : public StaticThread<> {
 private:
@@ -78,7 +81,7 @@ public:
 
     void init() override {
 
-        uart_gateway.addTopicsToForward(&orpeEstTopic);
+        udp_gateway.addTopicsToForward(&orpeEstTopic);
 
     }
 
@@ -92,7 +95,10 @@ public:
             OrpeTelemetry orpeData;
             if (orpeEstIPC_.receiveData(orpeData)) {
                 orpeEstTopic.publish(orpeData);
+
             }
+
+            suspendCallerUntil(NOW() + 10*MILLISECONDS);
 
         }
 
@@ -100,3 +106,84 @@ public:
 
 
 } orpeDatalink;
+
+
+/**
+ * A class for testing the datalink. Sends the time.
+*/
+class DatalinkTestingSend : public StaticThread<> {
+private:
+
+
+public: 
+
+    DatalinkTestingSend() {}
+
+
+    void init() override {
+
+        udp_gateway.addTopicsToForward(&datalinkTimeTopic);
+
+    }
+
+    void run() override {
+
+
+
+        while (1) {
+            
+            float time = SECONDS_NOW();
+            datalinkTimeTopic.publish(time);
+            
+            suspendCallerUntil(NOW() + 1*SECONDS);
+
+        }
+
+    }
+
+
+};
+//DatalinkTestingSend datalinkTestingSend;
+
+
+/**
+ * A class for testing the datalink. Recieves the time.
+*/
+class DatalinkTestingRecieve : public StaticThread<> {
+private:
+
+    CommBuffer<float> timeBuf_;
+    Subscriber timeSubr_;
+
+
+public: 
+
+    DatalinkTestingRecieve() : timeSubr_(datalinkTimeTopic, timeBuf_) {}
+
+
+    void init() override {
+
+        udp_gateway.addTopicsToForward(&datalinkTimeTopic);
+
+    }
+
+    void run() override {
+
+
+
+        while (1) {
+            
+            float time = 0;
+            if (timeBuf_.getOnlyIfNewData(time)) {
+                PRINTF("Recieved time: %.2f\n", time);
+            }
+            
+            suspendCallerUntil(NOW() + 100*MILLISECONDS);
+
+        }
+
+    }
+
+
+};
+//DatalinkTestingRecieve datalinkTestingRecieve;
