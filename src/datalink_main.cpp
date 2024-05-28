@@ -170,10 +170,16 @@ private:
     CommBuffer<float> timeBuf_;
     Subscriber timeSubr_;
 
+    CommBuffer<ORPEDatalink> orpeTeleBuf_;
+    Subscriber orpeTeleSubr_;
+
 
 public: 
 
-    DatalinkTestingRecieve() : timeSubr_(datalinkTimeTopic, timeBuf_) {}
+    DatalinkTestingRecieve() : 
+        timeSubr_(datalinkTimeTopic, timeBuf_),
+        orpeTeleSubr_(orpeEstTopic, orpeTeleBuf_) 
+    {}
 
 
     void init() override {
@@ -192,6 +198,24 @@ public:
             if (timeBuf_.getOnlyIfNewData(time)) {
                 PRINTF("TESTING received time: %.2f\n", time);
             }
+
+            OrpeTelemetry orpeTele;
+            if (orpeTeleBuf_.getOnlyIfNewData(orpeTele)) {
+
+                std::vector<int> ledIDs;
+                for (int i = 0; i < 15; i++) {
+                    ledIDs.push_back((orpeTele.ledIDs >> (i * 2)) & 0b00000011);
+                }
+
+                std::string ledIDString = "";
+                for (int i = 0; i < 15; i++) {
+                    if (ledIDs[i] != 0) {
+                        ledIDString += std::to_string(i) + ": " + std::to_string(ledIDs[i]) + "\n\t";
+                    }
+                }
+
+                printf("Telemetry \npos: %f, %f, %f\nrot: %f, %f, %f\nPoints: %d\nIDs: \t %s", orpeTele.px, orpeTele.py, orpeTele.pz, orpeTele.ax, orpeTele.ay, orpeTele.az, orpeTele.numPoints, ledIDString.c_str());
+            }
             
             suspendCallerUntil(NOW() + 1*MILLISECONDS);
 
@@ -201,4 +225,4 @@ public:
 
 
 };
-DatalinkTestingRecieve datalinkTestingRecieve;
+//DatalinkTestingRecieve datalinkTestingRecieve;
