@@ -65,7 +65,7 @@ Topic<OrpeTelemetry> orpeEstTopic(1300, "ORPE telemetry");
 Topic<ORPECommand> orpeCmdTopic(1301, "ORPE telecommand");
 
 //Topics for testing the datalink
-Topic<float> datalinkTimeTopic(1301, "Datalink Time Testing");
+Topic<float> datalinkTimeTopic(1501, "Datalink Time Testing");
 
 
 /**
@@ -76,7 +76,7 @@ private:
 
     //IPC to receive ORPE estimations
     UdpIpc<OrpeTelemetry> orpeEstIPC_;
-    UdpIpc<ORPECommandType_t> orpeCmdIPC_;
+    UdpIpc<ORPECommand> orpeCmdIPC_;
 
     //Buffer to receive the telecommands for ORPE
     RODOS::CommBuffer<ORPECommand> cmdBuf_;
@@ -84,7 +84,7 @@ private:
 
 public: 
 
-    ORPEDatalink() : cmdSubr_(orpeCmdTopic, cmdSubr_) {}
+    ORPEDatalink() : cmdSubr_(orpeCmdTopic, cmdBuf_) {}
 
 
     void init() override {
@@ -170,7 +170,7 @@ private:
     CommBuffer<float> timeBuf_;
     Subscriber timeSubr_;
 
-    CommBuffer<ORPEDatalink> orpeTeleBuf_;
+    CommBuffer<OrpeTelemetry> orpeTeleBuf_;
     Subscriber orpeTeleSubr_;
 
 
@@ -202,9 +202,9 @@ public:
             OrpeTelemetry orpeTele;
             if (orpeTeleBuf_.getOnlyIfNewData(orpeTele)) {
 
-                std::vector<int> ledIDs;
+                int ledIDs[16];
                 for (int i = 0; i < 15; i++) {
-                    ledIDs.push_back((orpeTele.ledIDs >> (i * 2)) & 0b00000011);
+                    ledIDs[i] = (orpeTele.ledIDs >> (i * 2)) & 0b00000011;
                 }
 
                 std::string ledIDString = "";
