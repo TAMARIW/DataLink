@@ -9,6 +9,10 @@
 
 //#include "ORPE/include/Datastruct.h"
 
+//Settings for the ORPE datalink.
+#define DATALINK_ORPETELEMETRY_CHANNEL      5120 //The channel used to send telemetry data to the datalink.
+#define DATALINK_ORPETELECOMMAND_CHANNEL    5121 //The channel used to recieve telecommands from the datalink.
+
 
 /// @brief compact form of data from orpe. Used for transfer with other systems.
 struct OrpeTelemetry {
@@ -48,16 +52,17 @@ UDPInOut udp(-50000);
 LinkinterfaceUDP linkinterface(&udp);
 Gateway udp_gateway(&linkinterface, true);
 
-HAL_UART uart(UART_IDX4);
+/*HAL_UART uart(UART_IDX4);
 LinkinterfaceUART uart_linkinterface(&uart, 115200);
 Gateway uart_gateway(&uart_linkinterface, true);
 
 //Gateway router 
-Router gatewayRouter(true, &uart_gateway, &udp_gateway);
+Router gatewayRouter(true, &uart_gateway, &udp_gateway);*/
 
 
 //Topics for communication with ORPE
 Topic<OrpeTelemetry> orpeEstTopic(1300, "ORPE telemetry");
+Topic<ORPECommand> orpeCmdTopic(1301, "ORPE telecommand");
 
 //Topics for testing the datalink
 Topic<float> datalinkTimeTopic(1301, "Datalink Time Testing");
@@ -73,10 +78,13 @@ private:
     UdpIpc<OrpeTelemetry> orpeEstIPC_;
     UdpIpc<ORPECommandType_t> orpeCmdIPC_;
 
+    //Buffer to receive the telecommands for ORPE
+    RODOS::CommBuffer<ORPECommand> cmdBuf_;
+    RODOS::Subscriber cmdSubr_;
 
 public: 
 
-    ORPEDatalink() {}
+    ORPEDatalink() : cmdSubr_(orpeCmdTopic, cmdSubr_) {}
 
 
     void init() override {
@@ -87,17 +95,24 @@ public:
 
     void run() override {
 
-        orpeEstIPC_.init(10);
-        orpeCmdIPC_.init(11);
+        orpeEstIPC_.init(DATALINK_ORPETELEMETRY_CHANNEL);
+        orpeCmdIPC_.init(DATALINK_ORPETELECOMMAND_CHANNEL);
 
         while (1) {
             
+            // This forwards the udpipc telemetry from ORPE to RODOS system
             OrpeTelemetry orpeData;
             if (orpeEstIPC_.receiveData(orpeData)) {
                 orpeEstTopic.publish(orpeData);
 
             }
 
+            // This forwards the telecommands from the RODOS system to ORPE via udpipc
+            ORPECommand orpeCmd;
+            if (cmdBuf_.getOnlyIfNewData(orpeCmd)) 
+                orpeCmdIPC_.sendData(orpeCmd);
+
+            // Delay should be a low enough max latency while also consuming a low amount of cpu for busy waiting.
             suspendCallerUntil(NOW() + 10*MILLISECONDS);
 
         }
@@ -175,10 +190,10 @@ public:
             
             float time = 0;
             if (timeBuf_.getOnlyIfNewData(time)) {
-                PRINTF("Recieved time: %.2f\n", time);
+                PRINTF("TESTING received time: %.2f\n", time);
             }
             
-            suspendCallerUntil(NOW() + 100*MILLISECONDS);
+            suspendCallerUntil(NOW() + 1*MILLISECONDS);
 
         }
 
@@ -186,4 +201,4 @@ public:
 
 
 };
-//DatalinkTestingRecieve datalinkTestingRecieve;
+DatalinkTestingRecieve datalinkTestingRecieve;
