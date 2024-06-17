@@ -8,7 +8,7 @@ add_subdirectory(lib/rodos)
 add_subdirectory(lib/udpipc)
 
 #add orpe to use the data structs. Do not link as library.
-add_subdirectory(lib/ORPE)
+#add_subdirectory(lib/ORPE)
 
 #Collect datalink source files add them to the executable
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
@@ -17,3 +17,5 @@ add_executable(${PROJECT_NAME} ${SRC_FILES})
 #Create the datalink executable
 target_link_libraries(${PROJECT_NAME} PUBLIC rodos udpipc)
 
+#Include ORPE header files
+target_include_directories(${PROJECT_NAME} PUBLIC lib/ORPE/include/)
