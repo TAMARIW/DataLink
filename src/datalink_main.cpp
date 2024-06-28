@@ -7,44 +7,13 @@
 
 #include "udp_ipc.hpp"
 
+#include "Datastruct.h"
+
 //#include "ORPE/include/Datastruct.h"
 
 //Settings for the ORPE datalink.
 #define DATALINK_ORPETELEMETRY_CHANNEL      5120 //The channel used to send telemetry data to the datalink.
 #define DATALINK_ORPETELECOMMAND_CHANNEL    5121 //The channel used to recieve telecommands from the datalink.
-
-
-/// @brief compact form of data from orpe. Used for transfer with other systems.
-struct OrpeTelemetry {
-
-    // Estimated pose. p values are the position in mm. a values are rotation in rotation axis (magnetude is angle direction is axis).
-    float px, py, pz;
-    float ax, ay, az;
-    // Frame number.
-    uint32_t frameNum;
-    // Timestamp in milliseconds in reference to start of ORPE.
-    uint32_t timestamp;
-    // If the frame estimation is valid
-    bool valid;
-    // The leds that are currently identified. Each paar of 2 bits correspond to the ID and give the number of Points with this ID. E.g. bits 2 and 3 are 01 means there is 1 point with ID 1. Bits 4 and 5 are 11 then 3 or more points with ID 2.
-    uint32_t ledIDs;
-    // Total number of points found in the image.
-    uint16_t numPoints;
-};// __attribute__ ((packed));
-
-/// @brief Command types that can be sent to ORPE
-enum ORPECommandType_t : uint8_t {
-    ORPECommandType_Start, //Orpe will reset and begin running to identify LEDs and estimate pose.
-    ORPECommandType_Stop,  //Orpe will stop and go into a low cpu usage mode awaiting start command.
-    ORPECommandType_TakeImage, //Orpe will save the latest image upon receival of command and send back. Takes a normal exposed high res image when orpe not running, otherwise the same image orpe uses for estimation.
-    ORPECommandType_TakeImageData //Same as ORPECommandType_TakeImage but will also draw debug info onto the image if orpe is running.
-};
-
-/// @brief Container for ORPE commands. What the value means depends on the command.
-struct ORPECommand {
-    ORPECommandType_t command;
-    int32_t value;
-};
 
 
 // Gateway setup
