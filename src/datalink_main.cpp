@@ -2,39 +2,39 @@
 
 #include "rodos.h"
 
-#include "gateway/router.h"
+//#include "gateway/router.h"
 #include "gateway/gateway.h"
+
+#include "exclusive_router.hpp"
 
 #include "udp_ipc.hpp"
 
 #include "Datastruct.h"
 
-//#include "ORPE/include/Datastruct.h"
 
 //Settings for the ORPE datalink.
-#define DATALINK_ORPETELEMETRY_CHANNEL      5120 //The channel used to send telemetry data to the datalink.
-#define DATALINK_ORPETELECOMMAND_CHANNEL    5121 //The channel used to recieve telecommands from the datalink.
+#define DATALINK_ORPETELEMETRY_CHANNEL          5120 //The channel used to send telemetry data to the datalink.
+#define DATALINK_ORPETELECOMMAND_CHANNEL        5121 //The channel used to recieve telecommands from the datalink.
+
+#define DATALINK_ORPETELEMETRY_SELF_TOPICID     1300 //The channel where ORPE pose estimations from the same satellite is published. (From itsself)
+#define DATALINK_ORPETELECOMMAND_SELF_TOPICID   1301 //The channel where ORPE telecommands are published to arrive at its own ORPE. (To itsself)
 
 
 // Gateway setup
 UDPInOut udp(-50000);
 LinkinterfaceUDP linkinterface(&udp);
-Gateway udp_gateway(&linkinterface, true);
+Gateway udp_gateway(&linkinterface);
 
-/*HAL_UART uart(UART_IDX4);
+HAL_UART uart(UART_IDX4);
 LinkinterfaceUART uart_linkinterface(&uart, 115200);
-Gateway uart_gateway(&uart_linkinterface, true);
+Gateway uart_gateway(&uart_linkinterface);
 
 //Gateway router 
-Router gatewayRouter(true, &uart_gateway, &udp_gateway);*/
-
+ExclusiveRouter gatewayRouter(true, &uart_gateway, &udp_gateway);
 
 //Topics for communication with ORPE
-Topic<OrpeTelemetry> orpeEstTopic(1300, "ORPE telemetry");
-Topic<ORPECommand> orpeCmdTopic(1301, "ORPE telecommand");
-
-//Topics for testing the datalink
-Topic<float> datalinkTimeTopic(1501, "Datalink Time Testing");
+Topic<OrpeTelemetry> orpeSelfTmtTopic(DATALINK_ORPETELEMETRY_SELF_TOPICID, "ORPE Self telemetry");
+Topic<ORPECommand> orpeSelfCmdTopic(DATALINK_ORPETELECOMMAND_SELF_TOPICID, "ORPE Self telecommand");
 
 
 /**
@@ -47,18 +47,28 @@ private:
     UdpIpc<OrpeTelemetry> orpeEstIPC_;
     UdpIpc<ORPECommand> orpeCmdIPC_;
 
-    //Buffer to receive the telecommands for ORPE
-    RODOS::CommBuffer<ORPECommand> cmdBuf_;
-    RODOS::Subscriber cmdSubr_;
+    //Subscriber buffers for receiving commands and telemetries from self and target.
+    RODOS::CommBuffer<ORPECommand> cmdSelfBuf_; //Commands to this satellite ORPE
+    
+    //Subscribers for buffers
+    RODOS::Subscriber cmdSelfSubr_;
 
 public: 
 
-    ORPEDatalink() : cmdSubr_(orpeCmdTopic, cmdBuf_) {}
+    ORPEDatalink() : 
+        cmdSelfSubr_(orpeSelfCmdTopic, cmdSelfBuf_)
+    {}
 
 
     void init() override {
 
-        udp_gateway.addTopicsToForward(&orpeEstTopic);
+        //These topics should not be routed between the gateways!
+        gatewayRouter.addTopicToExclude(DATALINK_ORPETELEMETRY_SELF_TOPICID);
+        gatewayRouter.addTopicToExclude(DATALINK_ORPETELECOMMAND_SELF_TOPICID);
+
+        //Comms with STM32
+        uart_gateway.addTopicsToForward(&orpeSelfTmtTopic);
+        uart_gateway.addTopicsToForward(&orpeSelfCmdTopic);
 
     }
 
@@ -69,16 +79,16 @@ public:
 
         while (1) {
             
-            // This forwards the udpipc telemetry from ORPE to RODOS system
+            ORPECommand orpeCmd;
             OrpeTelemetry orpeData;
+            
+            // This forwards the udpipc telemetry from ORPE to RODOS system
             if (orpeEstIPC_.receiveData(orpeData)) {
-                orpeEstTopic.publish(orpeData);
-
+                orpeSelfTmtTopic.publish(orpeData);
             }
 
             // This forwards the telecommands from the RODOS system to ORPE via udpipc
-            ORPECommand orpeCmd;
-            if (cmdBuf_.getOnlyIfNewData(orpeCmd)) 
+            if (cmdSelfBuf_.getOnlyIfNewData(orpeCmd)) 
                 orpeCmdIPC_.sendData(orpeCmd);
 
             // Delay should be a low enough max latency while also consuming a low amount of cpu for busy waiting.
@@ -92,52 +102,12 @@ public:
 } orpeDatalink;
 
 
-/**
- * A class for testing the datalink. Sends the time.
-*/
-class DatalinkTestingSend : public StaticThread<> {
-private:
-
-
-public: 
-
-    DatalinkTestingSend() {}
-
-
-    void init() override {
-
-        udp_gateway.addTopicsToForward(&datalinkTimeTopic);
-
-    }
-
-    void run() override {
-
-
-
-        while (1) {
-            
-            float time = SECONDS_NOW();
-            datalinkTimeTopic.publish(time);
-            
-            suspendCallerUntil(NOW() + 1*SECONDS);
-
-        }
-
-    }
-
-
-};
-//DatalinkTestingSend datalinkTestingSend;
-
 
 /**
- * A class for testing the datalink. Recieves the time.
+ * A class for testing the datalink. Recieves and prints ORPE data
 */
 class DatalinkTestingRecieve : public StaticThread<> {
 private:
-
-    CommBuffer<float> timeBuf_;
-    Subscriber timeSubr_;
 
     CommBuffer<OrpeTelemetry> orpeTeleBuf_;
     Subscriber orpeTeleSubr_;
@@ -146,14 +116,11 @@ private:
 public: 
 
     DatalinkTestingRecieve() : 
-        timeSubr_(datalinkTimeTopic, timeBuf_),
-        orpeTeleSubr_(orpeEstTopic, orpeTeleBuf_) 
+        orpeTeleSubr_(orpeSelfTmtTopic, orpeTeleBuf_) 
     {}
 
 
     void init() override {
-
-        udp_gateway.addTopicsToForward(&datalinkTimeTopic);
 
     }
 
@@ -162,11 +129,6 @@ public:
 
 
         while (1) {
-            
-            float time = 0;
-            if (timeBuf_.getOnlyIfNewData(time)) {
-                PRINTF("TESTING received time: %.2f\n", time);
-            }
 
             OrpeTelemetry orpeTele;
             if (orpeTeleBuf_.getOnlyIfNewData(orpeTele)) {
