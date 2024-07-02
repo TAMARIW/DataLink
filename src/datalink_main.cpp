@@ -3,9 +3,10 @@
 #include "rodos.h"
 
 //#include "gateway/router.h"
-#include "gateway/gateway.h"
+//#include "gateway/gateway.h"
 
 #include "exclusive_router.hpp"
+#include "gateway_fast.hpp"
 
 #include "udp_ipc.hpp"
 
@@ -23,7 +24,7 @@
 // Gateway setup
 UDPInOut udp(-50000);
 LinkinterfaceUDP linkinterface(&udp);
-Gateway udp_gateway(&linkinterface);
+GatewayFast udp_gateway(&linkinterface);
 
 HAL_UART uart(UART_IDX4);
 LinkinterfaceUART uart_linkinterface(&uart, 115200);
@@ -145,7 +146,7 @@ public:
                     }
                 }
 
-                printf("Telemetry \npos: %f, %f, %f\nrot: %f, %f, %f\nPoints: %d\nIDs: \t %s", orpeTele.px, orpeTele.py, orpeTele.pz, orpeTele.ax, orpeTele.ay, orpeTele.az, orpeTele.numPoints, ledIDString.c_str());
+                PRINTF("Telemetry \npos: %f, %f, %f\nrot: %f, %f, %f\nPoints: %d\nIDs: \t %s", orpeTele.px, orpeTele.py, orpeTele.pz, orpeTele.ax, orpeTele.ay, orpeTele.az, orpeTele.numPoints, ledIDString.c_str());
             }
             
             suspendCallerUntil(NOW() + 1*MILLISECONDS);
