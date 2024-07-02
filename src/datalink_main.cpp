@@ -13,6 +13,10 @@
 #include "Datastruct.h"
 
 
+//Debug settings
+#define ORPE_NETWORK_WIDE false //Setting this to true will enable datalink to communicate with ORPE running on any device. This requires only one instance of ORPE to be running on the network.
+
+
 //Settings for the ORPE datalink.
 #define DATALINK_ORPETELEMETRY_CHANNEL          5120 //The channel used to send telemetry data to the datalink.
 #define DATALINK_ORPETELECOMMAND_CHANNEL        5121 //The channel used to recieve telecommands from the datalink.
@@ -75,8 +79,8 @@ public:
 
     void run() override {
 
-        orpeEstIPC_.init(DATALINK_ORPETELEMETRY_CHANNEL);
-        orpeCmdIPC_.init(DATALINK_ORPETELECOMMAND_CHANNEL);
+        orpeEstIPC_.init(DATALINK_ORPETELEMETRY_CHANNEL, ORPE_NETWORK_WIDE);
+        orpeCmdIPC_.init(DATALINK_ORPETELECOMMAND_CHANNEL, ORPE_NETWORK_WIDE);
 
         while (1) {
             
