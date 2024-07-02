@@ -24,7 +24,7 @@
 // Gateway setup
 UDPInOut udp(-50000);
 LinkinterfaceUDP linkinterface(&udp);
-GatewayFast udp_gateway(&linkinterface);
+Gateway udp_gateway(&linkinterface);
 
 HAL_UART uart(UART_IDX4);
 LinkinterfaceUART uart_linkinterface(&uart, 115200);
