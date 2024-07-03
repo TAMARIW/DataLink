@@ -20,15 +20,19 @@
 //Settings for the ORPE datalink.
 #define DATALINK_ORPETELEMETRY_CHANNEL          5120 //The channel used to send telemetry data to the datalink.
 #define DATALINK_ORPETELECOMMAND_CHANNEL        5121 //The channel used to recieve telecommands from the datalink.
+#define DATALINK_ORPESTATE_CHANNEL              5122 //The channel used to recieve telecommands from the datalink.
 
 #define DATALINK_ORPETELEMETRY_SELF_TOPICID     1300 //ORPE pose estimations from the same satellite. (From itsself)
 #define DATALINK_ORPETELECOMMAND_SELF_TOPICID   1301 //ORPE telecommands to ORPE on same satellite. (To itsself)
+#define DATALINK_ORPESTATE_SELF_TOPICID         1302 //ORPE state from the same satellite. (From itsself)
 
 #define DATALINK_ORPETELEMETRY_TGT_TOPICID      1310 //ORPE pose estimations from the target satellite. (From other satellite)
 #define DATALINK_ORPETELECOMMAND_TGT_TOPICID    1311 //ORPE telecommands to the other satellite. (To other satellite) 
+#define DATALINK_ORPESTATE_TGT_TOPICID          1312 //ORPE pose estimations from the target satellite. (From other satellite)
 
 #define DATALINK_ORPETELEMETRY_INTER_TOPICID    1400 //ORPE pose estimations from the target satellite. (From other satellite) Used for inter communication.
 #define DATALINK_ORPETELECOMMAND_INTER_TOPICID  1401 //ORPE telecommands to the other satellite. (To other satellite) Used for inter communication.
+#define DATALINK_ORPESTATE_INTER_TOPICID        1402 //ORPE pose estimations from the target satellite. (From other satellite) Used for inter communication.
 
 
 // Gateway setup
@@ -46,12 +50,15 @@ ExclusiveRouter gatewayRouter(true, &uart_gateway, &udp_gateway);
 //Topics for communication with ORPE
 Topic<OrpeTelemetry> orpeSelfTmtTopic(DATALINK_ORPETELEMETRY_SELF_TOPICID, "ORPE Self telemetry");
 Topic<ORPECommand> orpeSelfCmdTopic(DATALINK_ORPETELECOMMAND_SELF_TOPICID, "ORPE Self telecommand");
+Topic<ORPEState_t> orpeSelfSttTopic(DATALINK_ORPESTATE_SELF_TOPICID, "ORPE Self state");
 
 Topic<OrpeTelemetry> orpeTgtTmtTopic(DATALINK_ORPETELEMETRY_TGT_TOPICID, "ORPE TGT telemetry");
 Topic<ORPECommand> orpeTgtCmdTopic(DATALINK_ORPETELECOMMAND_TGT_TOPICID, "ORPE TGT telecommand");
+Topic<ORPEState_t> orpeTgtSttTopic(DATALINK_ORPESTATE_TGT_TOPICID, "ORPE TGT state");
 
 Topic<OrpeTelemetry> orpeIntTmtTopic(DATALINK_ORPETELEMETRY_INTER_TOPICID, "ORPE INTER telemetry");
 Topic<ORPECommand> orpeIntCmdTopic(DATALINK_ORPETELECOMMAND_INTER_TOPICID, "ORPE INTER telecommand");
+Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER state");
 
 
 /**
@@ -60,21 +67,24 @@ Topic<ORPECommand> orpeIntCmdTopic(DATALINK_ORPETELECOMMAND_INTER_TOPICID, "ORPE
 class ORPEDatalink : public StaticThread<> {
 private:
 
-    //IPC to receive ORPE estimations
+    //IPC to communicate with ORPE
     UdpIpc<OrpeTelemetry> orpeEstIPC_;
     UdpIpc<ORPECommand> orpeCmdIPC_;
+    UdpIpc<ORPEState_t> orpeSttIPC_;
 
     //Subscriber buffers for receiving commands and telemetries from self and target.
     RODOS::CommBuffer<ORPECommand> cmdSelfBuf_; //Commands to this satellite ORPE from stm32
     RODOS::CommBuffer<ORPECommand> cmdTgtBuf_; //Commands to tgt satellite ORPE from stm32
     RODOS::CommBuffer<ORPECommand> cmdIntBuf_; //Commands to self satellite ORPE from tgt
     RODOS::CommBuffer<OrpeTelemetry> tmtIntBuf_; //Tmt to stm32 from tgt satellite ORPE
+    RODOS::CommBuffer<ORPEState_t> sttIntBuf_; //Tmt to stm32 from tgt satellite ORPE
     
     //Subscribers for buffers
     RODOS::Subscriber cmdSelfSubr_;
     RODOS::Subscriber cmdTgtSubr_;
     RODOS::Subscriber cmdIntSubr_;
     RODOS::Subscriber tmtIntSubr_;
+    RODOS::Subscriber sttIntSubr_;
 
 public: 
 
@@ -82,7 +92,8 @@ public:
         cmdSelfSubr_(orpeSelfCmdTopic, cmdSelfBuf_),
         cmdTgtSubr_(orpeTgtCmdTopic, cmdTgtBuf_),
         cmdIntSubr_(orpeIntCmdTopic, cmdIntBuf_),
-        tmtIntSubr_(orpeIntTmtTopic, tmtIntBuf_)
+        tmtIntSubr_(orpeIntTmtTopic, tmtIntBuf_),
+        sttIntSubr_(orpeIntSttTopic, sttIntBuf_)
     {}
 
 
@@ -91,16 +102,24 @@ public:
         //These topics should not be routed between the gateways!
         gatewayRouter.addTopicToExclude(DATALINK_ORPETELEMETRY_SELF_TOPICID);
         gatewayRouter.addTopicToExclude(DATALINK_ORPETELECOMMAND_SELF_TOPICID);
+        gatewayRouter.addTopicToExclude(DATALINK_ORPESTATE_SELF_TOPICID);
 
         gatewayRouter.addTopicToExclude(DATALINK_ORPETELEMETRY_TGT_TOPICID);
         gatewayRouter.addTopicToExclude(DATALINK_ORPETELECOMMAND_TGT_TOPICID);
+        gatewayRouter.addTopicToExclude(DATALINK_ORPESTATE_TGT_TOPICID);
 
         gatewayRouter.addTopicToExclude(DATALINK_ORPETELEMETRY_INTER_TOPICID);
         gatewayRouter.addTopicToExclude(DATALINK_ORPETELECOMMAND_INTER_TOPICID);
+        gatewayRouter.addTopicToExclude(DATALINK_ORPESTATE_INTER_TOPICID);
 
         //Comms with STM32
         uart_gateway.addTopicsToForward(&orpeSelfTmtTopic);
         uart_gateway.addTopicsToForward(&orpeSelfCmdTopic);
+        uart_gateway.addTopicsToForward(&orpeSelfSttTopic);
+
+        uart_gateway.addTopicsToForward(&orpeTgtTmtTopic);
+        uart_gateway.addTopicsToForward(&orpeTgtCmdTopic);
+        uart_gateway.addTopicsToForward(&orpeTgtSttTopic);
 
     }
 
@@ -113,6 +132,7 @@ public:
             
             ORPECommand orpeCmd;
             OrpeTelemetry orpeData;
+            ORPEState_t orpeState;
             
             // Forward ORPE telemetry to STM32 and Intercomms
             if (orpeEstIPC_.receiveData(orpeData)) {
@@ -123,6 +143,11 @@ public:
                 orpeIntTmtTopic.publish(orpeData);
                 tmtIntSubr_.enable(true);
 
+            }
+
+            // Forward ORPE telemetry from intercomms to stm32
+            if (tmtIntBuf_.getOnlyIfNewData(orpeData)) {
+                orpeTgtTmtTopic.publish(orpeData);
             }
 
             // Forward Commands from stm32 or intercomms to ORPE
@@ -136,6 +161,22 @@ public:
                 orpeTgtCmdTopic.publish(orpeCmd);
                 cmdIntSubr_.enable(true);
                 
+            }
+
+            // Forward State telemetry from ORPE to STM32
+            if (sttIntBuf_.getOnlyIfNewData(orpeState)) {  
+
+                orpeSelfSttTopic.publish(orpeState);
+
+                sttIntSubr_.enable(false);
+                orpeIntSttTopic.publish(orpeState);
+                sttIntSubr_.enable(true);
+
+            }
+
+            // Forward ORPE state from intercomms to stm32
+            if (sttIntBuf_.getOnlyIfNewData(orpeState)) {
+                orpeTgtSttTopic.publish(orpeState);
             }
 
             // Delay should be a low enough max latency while also consuming a low amount of cpu for busy waiting.
@@ -194,6 +235,8 @@ public:
 
                 PRINTF("Telemetry \npos: %f, %f, %f\nrot: %f, %f, %f\nPoints: %d\nIDs: \t %s", orpeTele.px, orpeTele.py, orpeTele.pz, orpeTele.ax, orpeTele.ay, orpeTele.az, orpeTele.numPoints, ledIDString.c_str());
             }
+
+            PRINTF("TEST\n");
             
             suspendCallerUntil(NOW() + 1*MILLISECONDS);
 
@@ -203,4 +246,4 @@ public:
 
 
 };
-//DatalinkTestingRecieve datalinkTestingRecieve;
+DatalinkTestingRecieve datalinkTestingRecieve;
