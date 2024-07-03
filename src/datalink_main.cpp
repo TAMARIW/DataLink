@@ -246,4 +246,4 @@ public:
 
 
 };
-DatalinkTestingRecieve datalinkTestingRecieve;
+//DatalinkTestingRecieve datalinkTestingRecieve;
