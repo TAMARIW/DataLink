@@ -127,6 +127,7 @@ public:
 
         orpeEstIPC_.init(DATALINK_ORPETELEMETRY_CHANNEL, ORPE_NETWORK_WIDE);
         orpeCmdIPC_.init(DATALINK_ORPETELECOMMAND_CHANNEL, ORPE_NETWORK_WIDE);
+        orpeSttIPC_.init(DATALINK_ORPESTATE_CHANNEL, ORPE_NETWORK_WIDE);
 
         while (1) {
             
@@ -146,6 +147,21 @@ public:
                 tmtIntSubr_.enable(false);
                 orpeIntTmtTopic.publish(orpeData);
                 tmtIntSubr_.enable(true);
+
+            }
+
+            // Forward ORPE state to STM32 and Intercomms
+            if (orpeSttIPC_.receiveData(orpeState)) {
+
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding ORPE tele to STM32 and Intercom");
+                #endif
+
+                orpeSelfSttTopic.publish(orpeState);
+
+                sttIntSubr_.enable(false);
+                orpeIntSttTopic.publish(orpeState);
+                sttIntSubr_.enable(true);
 
             }
 
