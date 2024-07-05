@@ -14,8 +14,8 @@
 
 
 //Debug settings
-#define ORPE_NETWORK_WIDE true //Setting this to true will enable datalink to communicate with ORPE running on any device. This requires only one instance of ORPE to be running on the network.
-
+#define ORPE_NETWORK_WIDE false //Setting this to true will enable datalink to communicate with ORPE running on any device. This requires only one instance of ORPE to be running on the network.
+//#define DATALINK_DEBUG_MESSAGES
 
 //Settings for the ORPE datalink.
 #define DATALINK_ORPETELEMETRY_CHANNEL          5120 //The channel used to send telemetry data to the datalink.
@@ -137,6 +137,10 @@ public:
             // Forward ORPE telemetry to STM32 and Intercomms
             if (orpeEstIPC_.receiveData(orpeData)) {
 
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding ORPE tele to STM32 and Intercom");
+                #endif
+
                 orpeSelfTmtTopic.publish(orpeData);
 
                 tmtIntSubr_.enable(false);
@@ -147,15 +151,30 @@ public:
 
             // Forward ORPE telemetry from intercomms to stm32
             if (tmtIntBuf_.getOnlyIfNewData(orpeData)) {
+
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding ORPE tele from intercom to stm32");
+                #endif
+
                 orpeTgtTmtTopic.publish(orpeData);
             }
 
             // Forward Commands from stm32 or intercomms to ORPE
-            if (cmdSelfBuf_.getOnlyIfNewData(orpeCmd) || cmdIntBuf_.getOnlyIfNewData(orpeCmd)) //Self (from STM32) commands will be used if receiving commands from self and target at the same time.
+            if (cmdSelfBuf_.getOnlyIfNewData(orpeCmd) || cmdIntBuf_.getOnlyIfNewData(orpeCmd)) { //Self (from STM32) commands will be used if receiving commands from self and target at the same time.
+
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding ORPE commands from stm32 or intercomms to ORPE");
+                #endif
+
                 orpeCmdIPC_.sendData(orpeCmd);
+            }
 
             // Forward Commands from stm32 for target to intercomms
             if (cmdTgtBuf_.getOnlyIfNewData(orpeCmd)) {
+
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding ORPE commands from stm32 to intercomms");
+                #endif
 
                 cmdIntSubr_.enable(false); 
                 orpeTgtCmdTopic.publish(orpeCmd);
@@ -163,8 +182,12 @@ public:
                 
             }
 
-            // Forward State telemetry from ORPE to STM32
+            // Forward State telemetry from ORPE to STM32 and intercomms
             if (sttIntBuf_.getOnlyIfNewData(orpeState)) {  
+
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding ORPE state to stm32 and intercomms");
+                #endif
 
                 orpeSelfSttTopic.publish(orpeState);
 
@@ -176,6 +199,9 @@ public:
 
             // Forward ORPE state from intercomms to stm32
             if (sttIntBuf_.getOnlyIfNewData(orpeState)) {
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding ORPE state from intercomms to stm32");
+                #endif
                 orpeTgtSttTopic.publish(orpeState);
             }
 
@@ -246,4 +272,4 @@ public:
 
 
 };
-DatalinkTestingRecieve datalinkTestingRecieve;
+//DatalinkTestingRecieve datalinkTestingRecieve;
