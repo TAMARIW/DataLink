@@ -193,7 +193,7 @@ public:
                 #endif
 
                 cmdIntSubr_.enable(false); 
-                orpeTgtCmdTopic.publish(orpeCmd);
+                orpeIntCmdTopic.publish(orpeCmd);
                 cmdIntSubr_.enable(true);
                 
             }
