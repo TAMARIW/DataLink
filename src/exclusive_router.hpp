@@ -30,6 +30,13 @@ public:
     bool addTopicToExclude(uint32_t topicID);
 
     /**
+     * @brief Add the given topic to the exclusivity list. This topic will not be forwarded to another gateway.
+     * @param topic The topic to not forward.
+     * @returns true if topic added to list, false otherwise.
+    */
+    bool addTopicToExclude(RODOS::Topic& topic);
+
+    /**
      * @brief resets the topic list. All topics previously added to be excluded will not be excluded anymore.
     */
     void resetTopics(); 

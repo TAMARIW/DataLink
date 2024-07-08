@@ -21,6 +21,14 @@ bool ExclusiveRouter::addTopicToExclude(uint32_t topicID) {
     topicList_[topicListLength_] = topicID;
     topicListLength_++;
 
+    return true;
+
+}
+
+bool ExclusiveRouter::addTopicToExclude(RODOS::Topic& topic) {
+
+    return addTopicToExclude(topic->topicId);
+
 }
 
 void ExclusiveRouter::resetTopics() {
