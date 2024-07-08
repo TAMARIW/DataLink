@@ -34,7 +34,8 @@ public:
      * @param topic The topic to not forward.
      * @returns true if topic added to list, false otherwise.
     */
-    bool addTopicToExclude(RODOS::Topic& topic);
+    template <class TYPE>
+    bool addTopicToExclude(RODOS::Topic<TYPE>& topic) {return addTopicToExclude(topic->topicId);}
 
     /**
      * @brief resets the topic list. All topics previously added to be excluded will not be excluded anymore.
