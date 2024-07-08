@@ -204,7 +204,7 @@ public:
             }
 
             // Forward State telemetry from ORPE to STM32 and intercomms
-            if (sttIntBuf_.getOnlyIfNewData(orpeState)) {  
+            /*if (sttIntBuf_.getOnlyIfNewData(orpeState)) {  
 
                 #ifdef DATALINK_DEBUG_MESSAGES
                 PRINTF("Forwarding ORPE state to stm32 and intercomms");
@@ -216,7 +216,7 @@ public:
                 orpeIntSttTopic.publish(orpeState);
                 sttIntSubr_.enable(true);
 
-            }
+            }*/
 
             // Forward ORPE state from intercomms to stm32
             if (sttIntBuf_.getOnlyIfNewData(orpeState)) {
