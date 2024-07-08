@@ -121,6 +121,11 @@ public:
         uart_gateway.addTopicsToForward(&orpeTgtCmdTopic);
         uart_gateway.addTopicsToForward(&orpeTgtSttTopic);
 
+        //Intercomms
+        udp_gateway.addTopicsToForward(&orpeIntTmtTopic);
+        udp_gateway.addTopicsToForward(&orpeIntCmdTopic);
+        udp_gateway.addTopicsToForward(&orpeIntSttTopic);
+
     }
 
     void run() override {
