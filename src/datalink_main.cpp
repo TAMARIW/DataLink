@@ -15,7 +15,7 @@
 
 //Debug settings
 #define ORPE_NETWORK_WIDE false //Setting this to true will enable datalink to communicate with ORPE running on any device. This requires only one instance of ORPE to be running on the network.
-//#define DATALINK_DEBUG_MESSAGES
+#define DATALINK_DEBUG_MESSAGES
 
 //Settings for the ORPE datalink.
 #define DATALINK_ORPETELEMETRY_CHANNEL          5120 //The channel used to send telemetry data to the datalink.
