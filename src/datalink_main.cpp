@@ -6,7 +6,6 @@
 //#include "gateway/gateway.h"
 
 #include "exclusive_router.hpp"
-#include "gateway_fast.hpp"
 
 #include "udp_ipc.hpp"
 
