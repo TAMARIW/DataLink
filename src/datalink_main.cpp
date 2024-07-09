@@ -225,6 +225,9 @@ public:
                 #endif
                 orpeTgtSttTopic.publish(orpeState);
             }
+            
+            //Force udp gateway to update to make sure they capture new messages.
+            udp_gateway.resume();
 
             // Delay should be a low enough max latency while also consuming a low amount of cpu for busy waiting.
             suspendCallerUntil(NOW() + 10*MILLISECONDS);
