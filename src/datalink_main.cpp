@@ -144,7 +144,7 @@ public:
             if (orpeEstIPC_.receiveData(orpeData)) {
 
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE tele to STM32 and Intercom");
+                PRINTF("Forwarding ORPE tele to STM32 and Intercom\n");
                 #endif
 
                 orpeSelfTmtTopic.publish(orpeData);
@@ -159,7 +159,7 @@ public:
             if (orpeSttIPC_.receiveData(orpeState)) {
 
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE tele to STM32 and Intercom");
+                PRINTF("Forwarding ORPE tele to STM32 and Intercom\n");
                 #endif
 
                 orpeSelfSttTopic.publish(orpeState);
@@ -174,7 +174,7 @@ public:
             if (tmtIntBuf_.getOnlyIfNewData(orpeData)) {
 
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE tele from intercom to stm32");
+                PRINTF("Forwarding ORPE tele from intercom to stm32\n");
                 #endif
 
                 orpeTgtTmtTopic.publish(orpeData);
@@ -184,7 +184,7 @@ public:
             if (cmdSelfBuf_.getOnlyIfNewData(orpeCmd) || cmdIntBuf_.getOnlyIfNewData(orpeCmd)) { //Self (from STM32) commands will be used if receiving commands from self and target at the same time.
 
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE commands from stm32 or intercomms to ORPE");
+                PRINTF("Forwarding ORPE commands from stm32 or intercomms to ORPE\n");
                 #endif
 
                 orpeCmdIPC_.sendData(orpeCmd);
@@ -194,7 +194,7 @@ public:
             if (cmdTgtBuf_.getOnlyIfNewData(orpeCmd)) {
 
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE commands from stm32 to intercomms");
+                PRINTF("Forwarding ORPE commands from stm32 to intercomms\n");
                 #endif
 
                 cmdIntSubr_.enable(false); 
@@ -207,7 +207,7 @@ public:
             /*if (sttIntBuf_.getOnlyIfNewData(orpeState)) {  
 
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE state to stm32 and intercomms");
+                PRINTF("Forwarding ORPE state to stm32 and intercomms\n");
                 #endif
 
                 orpeSelfSttTopic.publish(orpeState);
@@ -221,7 +221,7 @@ public:
             // Forward ORPE state from intercomms to stm32
             if (sttIntBuf_.getOnlyIfNewData(orpeState)) {
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE state from intercomms to stm32");
+                PRINTF("Forwarding ORPE state from intercomms to stm32\n");
                 #endif
                 orpeTgtSttTopic.publish(orpeState);
             }
