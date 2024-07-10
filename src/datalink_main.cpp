@@ -158,7 +158,7 @@ public:
             if (orpeSttIPC_.receiveData(orpeState)) {
 
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE tele to STM32 and Intercom\n");
+                PRINTF("Forwarding ORPE state to STM32 and Intercom\n");
                 #endif
 
                 orpeSelfSttTopic.publish(orpeState);
