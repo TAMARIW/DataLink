@@ -226,7 +226,7 @@ public:
             }
             
             //Force udp gateway to update to make sure they capture new messages.
-            udp_gateway.resume();
+            //udp_gateway.resume();
 
             // Delay should be a low enough max latency while also consuming a low amount of cpu for busy waiting.
             suspendCallerUntil(NOW() + 10*MILLISECONDS);
@@ -270,15 +270,10 @@ public:
             OrpeTelemetry orpeTele;
             if (orpeTeleBuf_.getOnlyIfNewData(orpeTele)) {
 
-                int ledIDs[16];
-                for (int i = 0; i < 15; i++) {
-                    ledIDs[i] = (orpeTele.ledIDs >> (i * 2)) & 0b00000011;
-                }
-
                 std::string ledIDString = "";
-                for (int i = 0; i < 15; i++) {
+                for (int i = 0; i < 16; i++) {
                     if (ledIDs[i] != 0) {
-                        ledIDString += std::to_string(i) + ": " + std::to_string(ledIDs[i]) + "\n\t";
+                        ledIDString += std::to_string(i) + ": " + std::to_string(orpeTele.ledIDCount[i]) + "\n\t";
                     }
                 }
 
