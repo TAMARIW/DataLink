@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string>
 
 #include "rodos.h"
 
@@ -272,9 +273,9 @@ public:
 
                 std::string ledIDString = "";
                 for (int i = 0; i < 16; i++) {
-                    if (ledIDs[i] != 0) {
-                        ledIDString += std::to_string(i) + ": " + std::to_string(orpeTele.ledIDCount[i]) + "\n\t";
-                    }
+                    
+                    ledIDString += std::to_string(i) + ": " + std::to_string(orpeTele.ledIDCount[i]) + "\n\t";
+                    
                 }
 
                 PRINTF("Telemetry \npos: %f, %f, %f\nrot: %f, %f, %f\nPoints: %d\nIDs: \t %s", orpeTele.px, orpeTele.py, orpeTele.pz, orpeTele.ax, orpeTele.ay, orpeTele.az, orpeTele.numPoints, ledIDString.c_str());
