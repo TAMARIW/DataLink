@@ -73,7 +73,84 @@ void resenderFunc(DataPacketDummy &data) {
     outgoingData.publish(data);
 }
 
-SubscriberReceiver<DataPacketDummy> resendSubr(oncomingData, resenderFunc, "Datalink perf testing subr");
+    CommBuffer<DataPacketDummy> datapacketBuf_;
+    Subscriber datapacketSub_;
+
+    
+
+public:
+
+    DatalinkManagment() :
+        datapacketSub_(oncomingData, datapacketBuf_)
+    {}
+
+    void init() override {
+
+        //Perf testing
+        udp_gateway.addTopicsToForward(&oncomingData);
+        udp_gateway.addTopicsToForward(&outgoingData);
+
+    }
+
+
+    void run() override {
+
+        DataPacketDummy data, dataRcv;
+        for (int i = 0; i < TEST_DATA_SIZE; i++) {
+            data.data[i] = i+1;
+        }
+
+        uint32_t packetCounter = 0;
+        uint32_t packetMisses = 0;
+        uint32_t packetCorruption = 0;
+
+        int64_t testBegin = NOW();
+
+        while (1) {
+
+            outgoingData.publish(data);
+            packetCounter++;
+
+            int64_t start = NOW();
+            bool newData = false;
+            while (!(newData = datapacketBuf_.getOnlyIfNewData(dataRcv)) && NOW() - start < 1*SECONDS) 
+                yield();
+            
+            int64_t time = NOW() - testBegin;
+
+            bool incorrect = false;
+            if (newData) {
+
+                for (int i = 0; i < TEST_DATA_SIZE; i++) {
+
+                    if (dataRcv.data[i] != data.data[i]) {
+                        incorrect = true;
+                        break;
+                    }
+
+                }
+
+            } else {
+                PRINTF("TIMEOUT! Looks like a packet was lost.\n");
+                packetMisses++;
+            }
+
+            if (incorrect) {
+                packetCorruption++;
+                PRINTF("INCORRECT! Looks like the data was corrupted.\n");
+            }
+
+            if (packetCounter%100 == 0) {   
+
+                PRINTF("\nPackets: %d \nTime: %.3fs \nLosses: %d \nCorrupt: %d\n", packetCounter, float(double(time)/SECONDS), packetMisses, packetCorruption);
+
+            }
+
+        }
+
+    }
+
+} datalinkManagment;
 
 
 /**
@@ -184,10 +261,6 @@ public:
         wifi_gateway.addTopicsToForward(&orpeIntTmtTopic);
         wifi_gateway.addTopicsToForward(&orpeIntCmdTopic);
         wifi_gateway.addTopicsToForward(&orpeIntSttTopic);
-
-        //Perf testing
-        udp_gateway.addTopicsToForward(&oncomingData);
-        udp_gateway.addTopicsToForward(&outgoingData);
 
     }
 
