@@ -185,6 +185,10 @@ public:
         wifi_gateway.addTopicsToForward(&orpeIntCmdTopic);
         wifi_gateway.addTopicsToForward(&orpeIntSttTopic);
 
+        //Perf testing
+        udp_gateway.addTopicsToForward(oncomingData);
+        udp_gateway.addTopicsToForward(outgoingData);
+
     }
 
     void run() override {
