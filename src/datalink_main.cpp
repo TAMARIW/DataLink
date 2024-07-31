@@ -61,6 +61,21 @@ Topic<ORPECommand> orpeIntCmdTopic(DATALINK_ORPETELECOMMAND_INTER_TOPICID, "ORPE
 Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER state");
 
 
+//Topic for testing performance
+#define TEST_DATA_SIZE 100
+struct DataPacketDummy {
+    uint8_t[TEST_DATA_SIZE];
+};
+Topic<DataPacketDummy> oncomingData(31000, "Oncoming data testing");
+Topic<DataPacketDummy> outgoingData(31001, "Outgoing data testing");
+
+void resenderFunc(DataPacketDummy &data) {
+    outgoingData.publish(data);
+}
+
+SubscriberReceiver<DataPacketDummy> resendSubr(oncomingData, resenderFunc, "Datalink perf testing subr");
+
+
 /**
  * This class takes care of starting ORPE.
  */
