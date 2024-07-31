@@ -45,5 +45,7 @@ public:
 
     bool shouldRouteThisMsg(RODOS::NetworkMessage &msg, uint32_t linkid) override;
 
+    bool shouldRouteThisMsgToGateway(RODOS::NetworkMessage& msg,uint32_t linkid, RODOS::Gateway* gateway) override;
+
 
 };

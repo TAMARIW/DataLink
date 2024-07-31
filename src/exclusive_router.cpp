@@ -42,3 +42,8 @@ bool ExclusiveRouter::shouldRouteThisMsg(RODOS::NetworkMessage &msg, uint32_t li
     return true;
 
 }
+
+bool ExclusiveRouter::shouldRouteThisMsgToGateway(RODOS::NetworkMessage& msg,uint32_t linkid, RODOS::Gateway* gateway) {
+    if(gateway->getLinkIdentifier()==linkid) return false;
+    return true;
+}
