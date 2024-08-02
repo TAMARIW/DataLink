@@ -34,8 +34,6 @@
 #define DATALINK_ORPETELECOMMAND_INTER_TOPICID  1401 //ORPE telecommands to the other satellite. (To other satellite) Used for inter communication.
 #define DATALINK_ORPESTATE_INTER_TOPICID        1402 //ORPE pose estimations from the target satellite. (From other satellite) Used for inter communication.
 
-#define DATALINK_STARTUP_ORPE                   1500 //If true is published, then datalink will startup orpe.
-
 
 // Gateway setup
 UDPInOut udp(-50000);
@@ -63,6 +61,9 @@ Topic<ORPECommand> orpeIntCmdTopic(DATALINK_ORPETELECOMMAND_INTER_TOPICID, "ORPE
 Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER state");
 
 
+/**
+ * This class takes care of starting ORPE.
+ */
 class ORPEStartup : public StaticThread<> {
 private:
 
@@ -89,7 +90,7 @@ public:
             if (datalinkORPEStartup_.getOnlyIfNewData(cmd) && cmd.command == ORPECommandType_t::ORPECommandType_Startup) {
 
                 datalinkORPEStartupSub_.enable(false); //Disable otherwise an old command to startup received after this point could cause ORPE to startup again.
-                std::system("~/orpetmw/build/ORPE"); //Will block until ORPE shutsdown.
+                std::system("~/orpetmw/build/ORPE"); //Will block until ORPE shuts down.
                 datalinkORPEStartupSub_.enable(true);
 
             }
@@ -223,11 +224,21 @@ public:
                 orpeTgtTmtTopic.publish(orpeData);
             }
 
-            // Forward Commands from stm32 or intercomms to ORPE
-            if (cmdSelfBuf_.getOnlyIfNewData(orpeCmd) || cmdIntBuf_.getOnlyIfNewData(orpeCmd)) { //Self (from STM32) commands will be used if receiving commands from self and target at the same time.
+            // Forward Commands from intercomms to self commands (Needed for ORPE startup class to also capture messages)
+            if (cmdIntBuf_.getOnlyIfNewData(orpeCmd)) { //Self (from STM32) commands will be used if receiving commands from self and target at the same time.
 
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE commands from stm32 or intercomms to ORPE\n");
+                PRINTF("Forwarding ORPE commands from intercomms to ORPE\n");
+                #endif
+
+                orpeSelfCmdTopic.publish(orpeCmd);
+            }
+
+            // Forward Commands from stm32 to ORPE
+            if (cmdSelfBuf_.getOnlyIfNewData(orpeCmd)) { //Self (from STM32) commands will be used if receiving commands from self and target at the same time.
+
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding ORPE commands from stm32 to ORPE\n");
                 #endif
 
                 orpeCmdIPC_.sendData(orpeCmd);
