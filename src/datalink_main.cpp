@@ -79,10 +79,9 @@ public:
 
         while (1) { 
 
-            if (!isProcessRunning("./ORPE"));
-                runProcess("~/orpetmw/build/ORPE");
+            runProcess("~/orpetmw/build/ORPE");
 
-            suspendCallerUntil(NOW() + 100*MILLISECONDS);
+            suspendCallerUntil(NOW() + 1000*MILLISECONDS);
 
         }
 
@@ -95,12 +94,6 @@ public:
 
         std::system(processPath.c_str());
 
-    }
-
-    bool isProcessRunning(const std::string& processName) {
-        std::string command = "pgrep " + processName + " > /dev/null 2>&1";
-        int result = system(command.c_str());
-        return result == 0;
     }
 
 
