@@ -34,6 +34,8 @@
 #define DATALINK_ORPETELECOMMAND_INTER_TOPICID  1401 //ORPE telecommands to the other satellite. (To other satellite) Used for inter communication.
 #define DATALINK_ORPESTATE_INTER_TOPICID        1402 //ORPE pose estimations from the target satellite. (From other satellite) Used for inter communication.
 
+#define DATALINK_STARTUP_ORPE                   1500 //If true is published, then datalink will startup orpe.
+
 
 // Gateway setup
 UDPInOut udp(-50000);
@@ -64,10 +66,14 @@ Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER
 class ORPEStartup : public StaticThread<> {
 private:
 
+    CommBuffer<ORPECommand> datalinkORPEStartup_;
+    Subscriber datalinkORPEStartupSub_;
 
 public:
 
-    ORPEStartup() {}
+    ORPEStartup() :
+        datalinkORPEStartupSub_(orpeSelfCmdTopic, datalinkORPEStartup_)
+    {}
 
 
     void init() override {
@@ -76,23 +82,21 @@ public:
 
     void run() override {
 
+        ORPECommand cmd;
 
         while (1) { 
 
-            runProcess("~/orpetmw/build/ORPE");
+            if (datalinkORPEStartup_.getOnlyIfNewData(cmd)) {
 
-            suspendCallerUntil(NOW() + 1000*MILLISECONDS);
+                datalinkORPEStartupSub_.enable(false); //Disable otherwise an old command to startup received after this point could cause ORPE to startup again.
+                std::system("~/orpetmw/build/ORPE"); //Will block until ORPE shutsdown.
+                datalinkORPEStartupSub_.enable(true);
+
+            }
+
+            suspendCallerUntil(NOW() + 100*MILLISECONDS);
 
         }
-
-
-        suspendCallerUntil(END_OF_TIME);
-
-    }
-
-    void runProcess(const std::string& processPath) {
-
-        std::system(processPath.c_str());
 
     }
 
