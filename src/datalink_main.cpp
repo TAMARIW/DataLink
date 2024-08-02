@@ -61,6 +61,52 @@ Topic<ORPECommand> orpeIntCmdTopic(DATALINK_ORPETELECOMMAND_INTER_TOPICID, "ORPE
 Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER state");
 
 
+class ORPEStartup : public StaticThread<> {
+private:
+
+
+public:
+
+    ORPEStartup() {}
+
+
+    void init() override {
+
+    }
+
+    void run() override {
+
+
+        while (1) { 
+
+            if (!isProcessRunning("./ORPE"));
+                runProcess("~/orpetmw/build/ORPE");
+
+            suspendCallerUntil(NOW() + 100*MILLISECONDS);
+
+        }
+
+
+        suspendCallerUntil(END_OF_TIME);
+
+    }
+
+    void runProcess(const std::string& processPath) {
+
+        std::system(processPath.c_str());
+
+    }
+
+    bool isProcessRunning(const std::string& processName) {
+        std::string command = "pgrep " + processName + " > /dev/null 2>&1";
+        int result = system(command.c_str());
+        return result == 0;
+    }
+
+
+} orpeStartup;
+
+
 /**
  * Communicates with the ORPE process via the udpipc API.
 */
