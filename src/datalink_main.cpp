@@ -86,7 +86,7 @@ public:
 
         while (1) { 
 
-            if (datalinkORPEStartup_.getOnlyIfNewData(cmd)) {
+            if (datalinkORPEStartup_.getOnlyIfNewData(cmd) && cmd.command == ORPECommandType_t::ORPECommandType_Startup) {
 
                 datalinkORPEStartupSub_.enable(false); //Disable otherwise an old command to startup received after this point could cause ORPE to startup again.
                 std::system("~/orpetmw/build/ORPE"); //Will block until ORPE shutsdown.
