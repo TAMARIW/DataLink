@@ -358,31 +358,19 @@ public:
 
     void run() override {
 
+        
+        datalinkEnableWiFiAP.publish(true);
 
+        suspendCallerUntil(NOW() + 20*SECONDS);
 
-        while (1) {
+        datalinkEnableWiFiAP.publish(false);
+        datalinkEnableWiFiConnect.publish(true);
 
-            OrpeTelemetry orpeTele;
-            if (orpeTeleBuf_.getOnlyIfNewData(orpeTele)) {
-
-                std::string ledIDString = "";
-                for (int i = 0; i < 16; i++) {
-                    
-                    ledIDString += std::to_string(i) + ": " + std::to_string(orpeTele.ledIDCount[i]) + "\n\t";
-                    
-                }
-
-                PRINTF("Telemetry \npos: %f, %f, %f\nrot: %f, %f, %f\nPoints: %d\nIDs: \t %s", orpeTele.px, orpeTele.py, orpeTele.pz, orpeTele.ax, orpeTele.ay, orpeTele.az, orpeTele.numPoints, ledIDString.c_str());
-            }
-
-            PRINTF("TEST\n");
-            
-            suspendCallerUntil(NOW() + 1*MILLISECONDS);
-
-        }
+        suspendCallerUntil(END_OF_TIME);
+        
 
     }
 
 
 };
-//DatalinkTestingRecieve datalinkTestingRecieve;
+DatalinkTestingRecieve datalinkTestingRecieve;
