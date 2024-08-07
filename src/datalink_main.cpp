@@ -34,6 +34,10 @@
 #define DATALINK_ORPETELECOMMAND_INTER_TOPICID  1401 //ORPE telecommands to the other satellite. (To other satellite) Used for inter communication.
 #define DATALINK_ORPESTATE_INTER_TOPICID        1402 //ORPE pose estimations from the target satellite. (From other satellite) Used for inter communication.
 
+//Settings for the datalink wifi
+#define DATALINK_ENABLE_WIFI_AP                 2100 //Topic used to enable or disable the wifi access point
+#define DATALINK_ENABLE_WIFI_CONNECT            2101 //Topic used to connect or disconnect wifi connection    
+
 
 // Gateway setup
 UDPInOut udp(-50000);
@@ -60,6 +64,35 @@ Topic<OrpeTelemetry> orpeIntTmtTopic(DATALINK_ORPETELEMETRY_INTER_TOPICID, "ORPE
 Topic<ORPECommand> orpeIntCmdTopic(DATALINK_ORPETELECOMMAND_INTER_TOPICID, "ORPE INTER telecommand");
 Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER state");
 
+//Topics used for controlling the wifi
+Topic<bool> datalinkEnableWiFiAP(DATALINK_ENABLE_WIFI_AP, "Datalink enable wifi AP");
+Topic<bool> datalinkEnableWiFiConnect(DATALINK_ENABLE_WIFI_CONNECT, "Datalink enable wifi connect");
+
+
+/**
+ * The following functions take care of the wifi control
+ */
+void datalinkWiFiAPFunc(bool& enable) {
+
+    if (enable) {
+        std::system("sudo nmcli connection add con-name 'Hotspot' \\ifname wlan0 type wifi slave-type bridge master bridge0 \\wifi.mode ap wifi.ssid TMWNetwork wifi-sec.key-mgmt wpa-psk \\wifi-sec.proto rsn wifi-sec.pairwise ccmp \\wifi-sec.psk TMWNetwork");
+    } else {
+        std::system("sudo nmcli con down Hotspot");
+    }
+
+}
+SubscriberReceiver<bool> datalinkWiFiAPSubscriber(datalinkEnableWiFiAP, datalinkWiFiAPFunc);
+
+void datalinkWiFiConnectFunc(bool& enable) {
+
+    if (enable) {
+        std::system("sudo nmcli dev wifi connect TMWNetwork password TMWNetwork");
+    } else {
+        std::system("sudo nmcli con down TMWNetwork");
+    }
+
+}
+SubscriberReceiver<bool> datalinkWiFiConnectSubscriber(datalinkEnableWiFiConnect, datalinkWiFiConnectFunc);
 
 /**
  * This class takes care of starting ORPE.
@@ -156,6 +189,9 @@ public:
         gatewayRouter.addTopicToExclude(DATALINK_ORPETELECOMMAND_INTER_TOPICID);
         gatewayRouter.addTopicToExclude(DATALINK_ORPESTATE_INTER_TOPICID);
 
+        gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_AP);
+        gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_CONNECT);
+
         //Comms with STM32
         uart_gateway.addTopicsToForward(&orpeSelfTmtTopic);
         uart_gateway.addTopicsToForward(&orpeSelfCmdTopic);
@@ -169,6 +205,10 @@ public:
         udp_gateway.addTopicsToForward(&orpeIntTmtTopic);
         udp_gateway.addTopicsToForward(&orpeIntCmdTopic);
         udp_gateway.addTopicsToForward(&orpeIntSttTopic);
+
+        //WiFi control
+        uart_gateway.addTopicsToForward(&datalinkEnableWiFiAP);
+        uart_gateway.addTopicsToForward(&datalinkEnableWiFiConnect);
 
     }
 
