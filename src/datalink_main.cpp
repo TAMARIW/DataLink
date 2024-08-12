@@ -38,6 +38,9 @@
 #define DATALINK_ENABLE_WIFI_AP                 2100 //Topic used to enable or disable the wifi access point
 #define DATALINK_ENABLE_WIFI_CONNECT            2101 //Topic used to connect or disconnect wifi connection    
 
+#define DATALINK_HEARTBEAT                      2202 //Topic used to send the datalink heartbeat
+#define DATALINK_HEARTBEAT_INTER                2202 //Topic used to send the datalink heartbeat over wifi
+
 
 // Gateway setup
 UDPInOut udp(-50000);
@@ -68,6 +71,9 @@ Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER
 Topic<bool> datalinkEnableWiFiAP(DATALINK_ENABLE_WIFI_AP, "Datalink enable wifi AP");
 Topic<bool> datalinkEnableWiFiConnect(DATALINK_ENABLE_WIFI_CONNECT, "Datalink enable wifi connect");
 
+//Topic used for the datalink heartbeat
+Topic<int64_t> datalinkHeartbeat(DATALINK_HEARTBEAT, "Datalink heartbeat");
+Topic<int64_t> datalinkHeartbeatInter(DATALINK_HEARTBEAT_INTER, "Datalink heartbeat intercomms");
 
 /**
  * The following functions take care of the wifi control
@@ -75,7 +81,11 @@ Topic<bool> datalinkEnableWiFiConnect(DATALINK_ENABLE_WIFI_CONNECT, "Datalink en
 void datalinkWiFiAPFunc(bool& enable) {
 
     if (enable) {
-        std::system("sudo nmcli connection add con-name 'Hotspot' \\ifname wlan0 type wifi slave-type bridge master bridge0 \\wifi.mode ap wifi.ssid TMWNetwork wifi-sec.key-mgmt wpa-psk \\wifi-sec.proto rsn wifi-sec.pairwise ccmp \\wifi-sec.psk TMWNetwork");
+
+        std::system("sudo nmcli con delete Hotspot");
+        std::system("sudo nmcli con add con-name 'Hotspot' \\ifname wlan0 type wifi slave-type bridge master bridge0 \\wifi.mode ap wifi.ssid TMWNetwork wifi-sec.key-mgmt wpa-psk \\wifi-sec.proto rsn wifi-sec.pairwise ccmp \\wifi-sec.psk TMWNetwork");
+        std::system("sudo nmcli con up Hotspot");
+
     } else {
         std::system("sudo nmcli con down Hotspot");
     }
@@ -86,6 +96,7 @@ SubscriberReceiver<bool> datalinkWiFiAPSubscriber(datalinkEnableWiFiAP, datalink
 void datalinkWiFiConnectFunc(bool& enable) {
 
     if (enable) {
+        std::system("sudo nmcli con delete TMWNetwork");
         std::system("sudo nmcli dev wifi connect TMWNetwork password TMWNetwork");
     } else {
         std::system("sudo nmcli con down TMWNetwork");
@@ -155,6 +166,9 @@ private:
     RODOS::CommBuffer<ORPECommand> cmdIntBuf_; //Commands to self satellite ORPE from tgt
     RODOS::CommBuffer<OrpeTelemetry> tmtIntBuf_; //Tmt to stm32 from tgt satellite ORPE
     RODOS::CommBuffer<ORPEState_t> sttIntBuf_; //Tmt to stm32 from tgt satellite ORPE
+
+    RODOS::CommBuffer<int64_t> heartbeatBuf_; //Heartbeat buffer
+    RODOS::CommBuffer<int64_t> heartbeatInterBuf_; //Heartbeat buffer for intercomms    
     
     //Subscribers for buffers
     RODOS::Subscriber cmdSelfSubr_;
@@ -162,6 +176,8 @@ private:
     RODOS::Subscriber cmdIntSubr_;
     RODOS::Subscriber tmtIntSubr_;
     RODOS::Subscriber sttIntSubr_;
+    RODOS::Subscriber heartbeatSubr_;
+    RODOS::Subscriber heartbeatInterSubr_;
 
 public: 
 
@@ -170,7 +186,9 @@ public:
         cmdTgtSubr_(orpeTgtCmdTopic, cmdTgtBuf_),
         cmdIntSubr_(orpeIntCmdTopic, cmdIntBuf_),
         tmtIntSubr_(orpeIntTmtTopic, tmtIntBuf_),
-        sttIntSubr_(orpeIntSttTopic, sttIntBuf_)
+        sttIntSubr_(orpeIntSttTopic, sttIntBuf_),
+        heartbeatSubr_(datalinkHeartbeat, heartbeatBuf_),
+        heartbeatInterSubr_(datalinkHeartbeatInter, heartbeatInterBuf_)
     {}
 
 
@@ -192,6 +210,9 @@ public:
         gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_AP);
         gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_CONNECT);
 
+        gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT);
+        gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT_INTER);
+
         //Comms with STM32
         uart_gateway.addTopicsToForward(&orpeSelfTmtTopic);
         uart_gateway.addTopicsToForward(&orpeSelfCmdTopic);
@@ -201,10 +222,14 @@ public:
         uart_gateway.addTopicsToForward(&orpeTgtCmdTopic);
         uart_gateway.addTopicsToForward(&orpeTgtSttTopic);
 
+        uart_gateway.addTopicsToForward(&datalinkHeartbeat);
+
         //Intercomms
         udp_gateway.addTopicsToForward(&orpeIntTmtTopic);
         udp_gateway.addTopicsToForward(&orpeIntCmdTopic);
         udp_gateway.addTopicsToForward(&orpeIntSttTopic);
+
+        udp_gateway.addTopicsToForward(&datalinkHeartbeatInter);
 
         //WiFi control
         uart_gateway.addTopicsToForward(&datalinkEnableWiFiAP);
@@ -297,21 +322,6 @@ public:
                 
             }
 
-            // Forward State telemetry from ORPE to STM32 and intercomms
-            /*if (sttIntBuf_.getOnlyIfNewData(orpeState)) {  
-
-                #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding ORPE state to stm32 and intercomms\n");
-                #endif
-
-                orpeSelfSttTopic.publish(orpeState);
-
-                sttIntSubr_.enable(false);
-                orpeIntSttTopic.publish(orpeState);
-                sttIntSubr_.enable(true);
-
-            }*/
-
             // Forward ORPE state from intercomms to stm32
             if (sttIntBuf_.getOnlyIfNewData(orpeState)) {
                 #ifdef DATALINK_DEBUG_MESSAGES
@@ -319,6 +329,28 @@ public:
                 #endif
                 orpeTgtSttTopic.publish(orpeState);
             }
+
+            // Forward Heartbeat to intercomms
+            int64_t heartbeat;
+            if (heartbeatBuf_.getOnlyIfNewData(heartbeat)) {
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding heartbeat to intercomms\n");
+                #endif
+                heartbeatInterSubr_.enable(false);
+                datalinkHeartbeatInter.publish(heartbeat);
+                heartbeatInterSubr_.enable(true);
+            }
+
+            // Forward Heartbeat from intercomms to stm32
+            if (heartbeatInterBuf_.getOnlyIfNewData(heartbeat)) {
+                #ifdef DATALINK_DEBUG_MESSAGES
+                PRINTF("Forwarding heartbeat from intercomms to stm32\n");
+                #endif
+                heartbeatSubr_.enable(false);
+                datalinkHeartbeat.publish(heartbeat);
+                heartbeatSubr_.enable(true);
+            }
+
             
             //Force udp gateway to update to make sure they capture new messages.
             //udp_gateway.resume();
@@ -358,7 +390,7 @@ public:
 
     void run() override {
 
-        
+
         datalinkEnableWiFiAP.publish(true);
 
         suspendCallerUntil(NOW() + 20*SECONDS);
