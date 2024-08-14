@@ -91,19 +91,67 @@ void datalinkWiFiAPFunc(bool& enable) {
     }
 
 }
-SubscriberReceiver<bool> datalinkWiFiAPSubscriber(datalinkEnableWiFiAP, datalinkWiFiAPFunc);
+//SubscriberReceiver<bool> datalinkWiFiAPSubscriber(datalinkEnableWiFiAP, datalinkWiFiAPFunc);
 
 void datalinkWiFiConnectFunc(bool& enable) {
 
     if (enable) {
-        //std::system("sudo nmcli con delete TMWNetwork");
-        std::system("sudo nmcli dev wifi connect TMWNetwork password TMWNetwork");
+        //std::system("sudo nmcli dev wifi rescan");
+        //std::system("sudo nmcli dev wifi connect TMWNetwork password TMWNetwork");
     } else {
         std::system("sudo nmcli con down TMWNetwork");
     }
 
 }
-SubscriberReceiver<bool> datalinkWiFiConnectSubscriber(datalinkEnableWiFiConnect, datalinkWiFiConnectFunc);
+//SubscriberReceiver<bool> datalinkWiFiConnectSubscriber(datalinkEnableWiFiConnect, datalinkWiFiConnectFunc);
+
+
+/**
+ * This class takes care of controlling the wifi.
+ */
+class WiFiControl : public StaticThread<> {
+private: 
+
+    CommBuffer<bool> datalinkWiFiAPBuf_;
+    Subscriber datalinkWiFiAPSub_;
+
+    CommBuffer<bool> datalinkWiFiConnectBuf_;
+    Subscriber datalinkWiFiConnectSub_;
+
+public:
+
+    WiFiControl() :
+        datalinkWiFiAPSub_(datalinkEnableWiFiAP, datalinkWiFiAPBuf_),
+        datalinkWiFiConnectSub_(datalinkEnableWiFiConnect, datalinkWiFiConnectBuf_)
+    {}
+
+    void init() override {
+
+    }
+
+    void run() override {
+
+        bool enable;
+
+        while (1) {
+
+            if (datalinkWiFiAPBuf_.getOnlyIfNewData(enable)) {
+                datalinkWiFiAPFunc(enable);
+                suspendCallerUntil(NOW() + 500*MILLISECONDS);
+            }
+
+            if (datalinkWiFiConnectBuf_.getOnlyIfNewData(enable)) {
+                datalinkWiFiConnectFunc(enable);
+                suspendCallerUntil(NOW() + 500*MILLISECONDS);
+            }
+
+            suspendCallerUntil(NOW() + 100*MILLISECONDS);
+
+        }
+
+    }
+
+} wifiControl;
 
 /**
  * This class takes care of starting ORPE.
