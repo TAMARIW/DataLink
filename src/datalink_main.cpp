@@ -98,6 +98,7 @@ void datalinkWiFiConnectFunc(bool& enable) {
     if (enable) {
         //std::system("sudo nmcli dev wifi rescan");
         //std::system("sudo nmcli dev wifi connect TMWNetwork password TMWNetwork");
+        std::system("sudo nmcli con up TMWNetwork");
     } else {
         std::system("sudo nmcli con down TMWNetwork");
     }
