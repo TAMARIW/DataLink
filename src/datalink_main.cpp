@@ -39,7 +39,7 @@
 #define DATALINK_ENABLE_WIFI_CONNECT            2101 //Topic used to connect or disconnect wifi connection    
 
 #define DATALINK_HEARTBEAT                      2202 //Topic used to send the datalink heartbeat
-#define DATALINK_HEARTBEAT_INTER                2202 //Topic used to send the datalink heartbeat over wifi
+#define DATALINK_HEARTBEAT_INTER                2203 //Topic used to send the datalink heartbeat over wifi
 
 
 // Gateway setup
