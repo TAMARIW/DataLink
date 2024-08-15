@@ -73,7 +73,61 @@ void resenderFunc(DataPacketDummy &data) {
     outgoingData.publish(data);
 }
 
-    CommBuffer<DataPacketDummy> datapacketBuf_;
+void resenderFunc(DataPacketDummy &data) {
+    outgoingData.publish(data);
+}
+
+SubscriberReceiver<DataPacketDummy> resendSubr(oncomingData, resenderFunc, "Datalink perf testing subr");
+
+
+class DatalinkPerfSender : StaticThread<> {
+private:
+
+    int64_t interval_ = 10*MILLISECONDS;
+
+public:
+
+    void init() override {
+
+        udp_gateway.addTopicsToForward(&outgoingData);
+
+    }
+
+
+    void run() override {
+
+        DataPacketDummy data;
+        for (int i = 0; i < TEST_DATA_SIZE; i++) {
+            data.data[i] = i+1;
+        }
+        data.id = 0;
+
+
+        int64_t nextRun = NOW();
+
+        while (1) {
+
+            data.sendTime = NOW();
+            timings.syncPut(data.sendTime);
+
+            outgoingData.publish(data);
+            data.id++;
+
+            nextRun += interval_;
+            suspendCallerUntil(nextRun);
+
+        }
+
+    }
+
+} perfSender;
+
+
+
+class DatalinkPerfRecv : StaticThread<> {
+private:
+
+    CommBuffer<DataPacketDummy> dataBuf_;
     Subscriber datapacketSub_;
 
     
