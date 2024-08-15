@@ -82,14 +82,15 @@ void datalinkWiFiAPFunc(bool& enable) {
 
     if (enable) {
         PRINTF("Enabling wifi AP\n");
-        std::system("sudo nmcli -w 5 con down TMWNetwork");
-        //std::system("sudo nmcli con delete Hotspot");
-        //std::system("sudo nmcli con add con-name 'Hotspot' \\ifname wlan0 type wifi slave-type bridge master bridge0 \\wifi.mode ap wifi.ssid TMWNetwork wifi-sec.key-mgmt wpa-psk \\wifi-sec.proto rsn wifi-sec.pairwise ccmp \\wifi-sec.psk TMWNetwork");
-        std::system("sudo nmcli -w 1 con up Hotspot");
+        std::system("sudo nmcli con delete TMWNetwork");
+        std::system("sudo nmcli con delete Hotspot");
+        std::system("sudo nmcli -w con add con-name 'Hotspot' \\ifname wlan0 type wifi slave-type bridge master bridge0 \\wifi.mode ap wifi.ssid TMWNetwork wifi-sec.key-mgmt wpa-psk \\wifi-sec.proto rsn wifi-sec.pairwise ccmp \\wifi-sec.psk TMWNetwork");
+        //std::system("sudo nmcli -w 1 con up Hotspot");
 
     } else {
         PRINTF("Disabling wifi AP\n");
-        std::system("sudo nmcli -w 1 con down Hotspot");
+        std::system("sudo nmcli con down Hotspot");
+        std::system("sudo nmcli con delete Hotspot");
     }
 
 }
@@ -99,13 +100,15 @@ void datalinkWiFiConnectFunc(bool& enable) {
 
     if (enable) {
         PRINTF("Enabling wifi connect\n");
-        std::system("sudo nmcli -w 5 con down Hotspot");
-        std::system("sudo nmcli -w 5 dev wifi rescan");
-        //std::system("sudo nmcli dev wifi connect TMWNetwork password TMWNetwork");
-        std::system("sudo nmcli -w 1 con up TMWNetwork");
+        std::system("sudo nmcli con delete TMWNetwork");
+        std::system("sudo nmcli con delete Hotspot");
+        std::system("sudo nmcli -w 2 dev wifi rescan");
+        std::system("sudo nmcli -w 1 dev wifi connect TMWNetwork password TMWNetwork");
+        //std::system("sudo nmcli -w 1 con up TMWNetwork");
     } else {
         PRINTF("Disabling wifi connect\n");
-        std::system("sudo nmcli -w 1 con down TMWNetwork");
+        std::system("sudo nmcli con down TMWNetwork");
+        std::system("sudo nmcli con delete TMWNetwork");
     }
 
 }
@@ -153,12 +156,12 @@ public:
 
             if (datalinkWiFiAPBuf_.getOnlyIfNewData(enable)) {
                 datalinkWiFiAPFunc(enable);
-                suspendCallerUntil(NOW() + 3000*MILLISECONDS);
+                //suspendCallerUntil(NOW() + 3000*MILLISECONDS);
             }
 
             if (datalinkWiFiConnectBuf_.getOnlyIfNewData(enable)) {
                 datalinkWiFiConnectFunc(enable);
-                suspendCallerUntil(NOW() + 3000*MILLISECONDS);
+                //suspendCallerUntil(NOW() + 3000*MILLISECONDS);
             }
 
             suspendCallerUntil(NOW() + 100*MILLISECONDS);
