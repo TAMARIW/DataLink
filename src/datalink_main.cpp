@@ -84,7 +84,7 @@ void datalinkWiFiAPFunc(bool& enable) {
         PRINTF("Enabling wifi AP\n");
         std::system("sudo nmcli con delete TMWNetwork");
         std::system("sudo nmcli con delete Hotspot");
-        std::system("sudo nmcli -w con add con-name 'Hotspot' \\ifname wlan0 type wifi slave-type bridge master bridge0 \\wifi.mode ap wifi.ssid TMWNetwork wifi-sec.key-mgmt wpa-psk \\wifi-sec.proto rsn wifi-sec.pairwise ccmp \\wifi-sec.psk TMWNetwork");
+        std::system("sudo nmcli -w 1 con add con-name 'Hotspot' \\ifname wlan0 type wifi slave-type bridge master bridge0 \\wifi.mode ap wifi.ssid TMWNetwork wifi-sec.key-mgmt wpa-psk \\wifi-sec.proto rsn wifi-sec.pairwise ccmp \\wifi-sec.psk TMWNetwork");
         //std::system("sudo nmcli -w 1 con up Hotspot");
 
     } else {
