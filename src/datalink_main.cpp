@@ -82,7 +82,7 @@ void datalinkWiFiAPFunc(bool& enable) {
 
     if (enable) {
         PRINTF("Enabling wifi AP\n");
-        std::system("sudo nmcli -w 1 con down TMWNetwork");
+        std::system("sudo nmcli -w 5 con down TMWNetwork");
         //std::system("sudo nmcli con delete Hotspot");
         //std::system("sudo nmcli con add con-name 'Hotspot' \\ifname wlan0 type wifi slave-type bridge master bridge0 \\wifi.mode ap wifi.ssid TMWNetwork wifi-sec.key-mgmt wpa-psk \\wifi-sec.proto rsn wifi-sec.pairwise ccmp \\wifi-sec.psk TMWNetwork");
         std::system("sudo nmcli -w 1 con up Hotspot");
@@ -99,8 +99,8 @@ void datalinkWiFiConnectFunc(bool& enable) {
 
     if (enable) {
         PRINTF("Enabling wifi connect\n");
-        std::system("sudo nmcli -w 1 con down Hotspot");
-        std::system("sudo nmcli -w 1 dev wifi rescan");
+        std::system("sudo nmcli -w 5 con down Hotspot");
+        std::system("sudo nmcli -w 5 dev wifi rescan");
         //std::system("sudo nmcli dev wifi connect TMWNetwork password TMWNetwork");
         std::system("sudo nmcli -w 1 con up TMWNetwork");
     } else {
@@ -133,22 +133,32 @@ public:
 
     void init() override {
 
+        //WiFi control
+        uart_gateway.addTopicsToForward(&datalinkEnableWiFiAP);
+        uart_gateway.addTopicsToForward(&datalinkEnableWiFiConnect);
+
+        gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_AP);
+        gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_CONNECT);
+
     }
 
     void run() override {
 
         bool enable;
 
+        datalinkWiFiAPBuf_.getOnlyIfNewData(enable);
+        datalinkWiFiConnectBuf_.getOnlyIfNewData(enable);
+
         while (1) {
 
             if (datalinkWiFiAPBuf_.getOnlyIfNewData(enable)) {
                 datalinkWiFiAPFunc(enable);
-                suspendCallerUntil(NOW() + 1000*MILLISECONDS);
+                suspendCallerUntil(NOW() + 3000*MILLISECONDS);
             }
 
             if (datalinkWiFiConnectBuf_.getOnlyIfNewData(enable)) {
                 datalinkWiFiConnectFunc(enable);
-                suspendCallerUntil(NOW() + 1000*MILLISECONDS);
+                suspendCallerUntil(NOW() + 3000*MILLISECONDS);
             }
 
             suspendCallerUntil(NOW() + 100*MILLISECONDS);
@@ -261,9 +271,6 @@ public:
         gatewayRouter.addTopicToExclude(DATALINK_ORPETELECOMMAND_INTER_TOPICID);
         gatewayRouter.addTopicToExclude(DATALINK_ORPESTATE_INTER_TOPICID);
 
-        gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_AP);
-        gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_CONNECT);
-
         gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT);
         gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT_INTER);
 
@@ -284,10 +291,6 @@ public:
         udp_gateway.addTopicsToForward(&orpeIntSttTopic);
 
         udp_gateway.addTopicsToForward(&datalinkHeartbeatInter);
-
-        //WiFi control
-        uart_gateway.addTopicsToForward(&datalinkEnableWiFiAP);
-        uart_gateway.addTopicsToForward(&datalinkEnableWiFiConnect);
 
     }
 
