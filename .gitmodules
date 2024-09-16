@@ -1,6 +1,6 @@
 [submodule "lib/rodos"]
 	path = lib/rodos
-	url = https://gitlab.com/rodos/rodos.git
+	url = https://gitlab.com/chst15/tamariw/rodos.git
 [submodule "lib/ORPE"]
 	path = lib/ORPE
 	url = https://gitlab.com/chst15/ORPE.git
