@@ -35,7 +35,6 @@
 #define DATALINK_ORPESTATE_INTER_TOPICID        1402 //ORPE pose estimations from the target satellite. (From other satellite) Used for inter communication.
 
 //Settings for the datalink wifi
-#define DATALINK_ENABLE_WIFI_AP                 2100 //Topic used to enable or disable the wifi access point
 #define DATALINK_ENABLE_WIFI_CONNECT            2101 //Topic used to connect or disconnect wifi connection    
 
 #define DATALINK_HEARTBEAT                      2202 //Topic used to send the datalink heartbeat
@@ -67,48 +66,22 @@ Topic<OrpeTelemetry> orpeIntTmtTopic(DATALINK_ORPETELEMETRY_INTER_TOPICID, "ORPE
 Topic<ORPECommand> orpeIntCmdTopic(DATALINK_ORPETELECOMMAND_INTER_TOPICID, "ORPE INTER telecommand");
 Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER state");
 
-//Topics used for controlling the wifi
-Topic<bool> datalinkEnableWiFiAP(DATALINK_ENABLE_WIFI_AP, "Datalink enable wifi AP");
+//Topic used for controlling the wifi
 Topic<bool> datalinkEnableWiFiConnect(DATALINK_ENABLE_WIFI_CONNECT, "Datalink enable wifi connect");
 
 //Topic used for the datalink heartbeat
 Topic<int64_t> datalinkHeartbeat(DATALINK_HEARTBEAT, "Datalink heartbeat");
 Topic<int64_t> datalinkHeartbeatInter(DATALINK_HEARTBEAT_INTER, "Datalink heartbeat intercomms");
 
-/**
- * The following functions take care of the wifi control
- */
-void datalinkWiFiAPFunc(bool& enable) {
-
-    if (enable) {
-        PRINTF("Enabling wifi AP\n");
-        std::system("sudo nmcli con delete TMWNetwork");
-        std::system("sudo nmcli con delete Hotspot");
-        std::system("sudo nmcli -w 1 con add con-name 'Hotspot' \\ifname wlan0 type wifi slave-type bridge master bridge0 \\wifi.mode ap wifi.ssid TMWNetwork wifi-sec.key-mgmt wpa-psk \\wifi-sec.proto rsn wifi-sec.pairwise ccmp \\wifi-sec.psk TMWNetwork");
-        //std::system("sudo nmcli -w 1 con up Hotspot");
-
-    } else {
-        PRINTF("Disabling wifi AP\n");
-        std::system("sudo nmcli con down Hotspot");
-        std::system("sudo nmcli con delete Hotspot");
-    }
-
-}
-//SubscriberReceiver<bool> datalinkWiFiAPSubscriber(datalinkEnableWiFiAP, datalinkWiFiAPFunc);
-
 void datalinkWiFiConnectFunc(bool& enable) {
 
     if (enable) {
         PRINTF("Enabling wifi connect\n");
-        std::system("sudo nmcli con delete TMWNetwork");
-        std::system("sudo nmcli con delete Hotspot");
-        std::system("sudo nmcli -w 2 dev wifi rescan");
-        std::system("sudo nmcli -w 1 dev wifi connect TMWNetwork password TMWNetwork");
+        //std::system("sudo nmcli con delete TMWNetwork");
         //std::system("sudo nmcli -w 1 con up TMWNetwork");
     } else {
         PRINTF("Disabling wifi connect\n");
-        std::system("sudo nmcli con down TMWNetwork");
-        std::system("sudo nmcli con delete TMWNetwork");
+        //std::system("sudo nmcli con down TMWNetwork");
     }
 
 }
@@ -121,26 +94,21 @@ void datalinkWiFiConnectFunc(bool& enable) {
 class WiFiControl : public StaticThread<> {
 private: 
 
-    CommBuffer<bool> datalinkWiFiAPBuf_;
-    Subscriber datalinkWiFiAPSub_;
-
     CommBuffer<bool> datalinkWiFiConnectBuf_;
     Subscriber datalinkWiFiConnectSub_;
+    
 
 public:
 
     WiFiControl() :
-        datalinkWiFiAPSub_(datalinkEnableWiFiAP, datalinkWiFiAPBuf_),
         datalinkWiFiConnectSub_(datalinkEnableWiFiConnect, datalinkWiFiConnectBuf_)
     {}
 
     void init() override {
 
         //WiFi control
-        uart_gateway.addTopicsToForward(&datalinkEnableWiFiAP);
         uart_gateway.addTopicsToForward(&datalinkEnableWiFiConnect);
 
-        gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_AP);
         gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_CONNECT);
 
     }
