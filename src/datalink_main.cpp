@@ -96,7 +96,7 @@ private:
 
     CommBuffer<bool> datalinkWiFiConnectBuf_;
     Subscriber datalinkWiFiConnectSub_;
-    
+
 
 public:
 
@@ -117,15 +117,9 @@ public:
 
         bool enable;
 
-        datalinkWiFiAPBuf_.getOnlyIfNewData(enable);
         datalinkWiFiConnectBuf_.getOnlyIfNewData(enable);
 
         while (1) {
-
-            if (datalinkWiFiAPBuf_.getOnlyIfNewData(enable)) {
-                datalinkWiFiAPFunc(enable);
-                //suspendCallerUntil(NOW() + 3000*MILLISECONDS);
-            }
 
             if (datalinkWiFiConnectBuf_.getOnlyIfNewData(enable)) {
                 datalinkWiFiConnectFunc(enable);
