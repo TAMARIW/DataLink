@@ -44,14 +44,14 @@
 // Gateway setup
 UDPInOut udp(-50000);
 LinkinterfaceUDP linkinterface(&udp);
-Gateway udp_gateway(&linkinterface);
+Gateway wifi_gateway(&linkinterface);
 
 HAL_UART uart(UART_IDX4);
 LinkinterfaceUART uart_linkinterface(&uart, 115200);
-Gateway uart_gateway(&uart_linkinterface);
+Gateway stm32_gateway(&uart_linkinterface);
 
 //Gateway router 
-ExclusiveRouter gatewayRouter(true, &uart_gateway, &udp_gateway);
+ExclusiveRouter gatewayRouter(true, &stm32_gateway, &wifi_gateway);
 
 //Topics for communication with ORPE
 Topic<OrpeTelemetry> orpeSelfTmtTopic(DATALINK_ORPETELEMETRY_SELF_TOPICID, "ORPE Self telemetry");
@@ -240,20 +240,20 @@ public:
         gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT_INTER);
 
         //Comms with STM32
-        uart_gateway.addTopicsToForward(&orpeSelfTmtTopic);
-        uart_gateway.addTopicsToForward(&orpeSelfCmdTopic);
-        uart_gateway.addTopicsToForward(&orpeSelfSttTopic);
+        stm32_gateway.addTopicsToForward(&orpeSelfTmtTopic);
+        stm32_gateway.addTopicsToForward(&orpeSelfCmdTopic);
+        stm32_gateway.addTopicsToForward(&orpeSelfSttTopic);
 
-        uart_gateway.addTopicsToForward(&orpeTgtTmtTopic);
-        uart_gateway.addTopicsToForward(&orpeTgtCmdTopic);
-        uart_gateway.addTopicsToForward(&orpeTgtSttTopic);
+        stm32_gateway.addTopicsToForward(&orpeTgtTmtTopic);
+        stm32_gateway.addTopicsToForward(&orpeTgtCmdTopic);
+        stm32_gateway.addTopicsToForward(&orpeTgtSttTopic);
 
         uart_gateway.addTopicsToForward(&datalinkHeartbeat);
 
         //Intercomms
-        udp_gateway.addTopicsToForward(&orpeIntTmtTopic);
-        udp_gateway.addTopicsToForward(&orpeIntCmdTopic);
-        udp_gateway.addTopicsToForward(&orpeIntSttTopic);
+        wifi_gateway.addTopicsToForward(&orpeIntTmtTopic);
+        wifi_gateway.addTopicsToForward(&orpeIntCmdTopic);
+        wifi_gateway.addTopicsToForward(&orpeIntSttTopic);
 
         udp_gateway.addTopicsToForward(&datalinkHeartbeatInter);
 
@@ -375,7 +375,7 @@ public:
 
             
             //Force udp gateway to update to make sure they capture new messages.
-            //udp_gateway.resume();
+            //wifi_gateway.resume();
 
             // Delay should be a low enough max latency while also consuming a low amount of cpu for busy waiting.
             suspendCallerUntil(NOW() + 10*MILLISECONDS);
