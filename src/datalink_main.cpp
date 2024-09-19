@@ -107,7 +107,7 @@ public:
     void init() override {
 
         //WiFi control
-        uart_gateway.addTopicsToForward(&datalinkEnableWiFiConnect);
+        stm32_gateway.addTopicsToForward(&datalinkEnableWiFiConnect);
 
         gatewayRouter.addTopicToExclude(DATALINK_ENABLE_WIFI_CONNECT);
 
@@ -248,14 +248,14 @@ public:
         stm32_gateway.addTopicsToForward(&orpeTgtCmdTopic);
         stm32_gateway.addTopicsToForward(&orpeTgtSttTopic);
 
-        uart_gateway.addTopicsToForward(&datalinkHeartbeat);
+        stm32_gateway.addTopicsToForward(&datalinkHeartbeat);
 
         //Intercomms
         wifi_gateway.addTopicsToForward(&orpeIntTmtTopic);
         wifi_gateway.addTopicsToForward(&orpeIntCmdTopic);
         wifi_gateway.addTopicsToForward(&orpeIntSttTopic);
 
-        udp_gateway.addTopicsToForward(&datalinkHeartbeatInter);
+        wifi_gateway.addTopicsToForward(&datalinkHeartbeatInter);
 
     }
 
