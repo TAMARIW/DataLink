@@ -129,15 +129,11 @@ public:
 
         while (1) {
 
-            if (datalinkWiFiConnectBuf_.getOnlyIfNewData(enable) && !wifiForceEnable_) {
-                datalinkWiFiConnectFunc(enable);
-                wifiEnabled_ = enable;
+            if (datalinkWiFiConnectBuf_.getOnlyIfNewData(enable)) {
+                bool enableWiFI = enable || wifiForceEnable_;
+                datalinkWiFiConnectFunc(enableWiFI);
+                wifiEnabled_ = enableWiFI;
                 //suspendCallerUntil(NOW() + 3000*MILLISECONDS);
-            }
-
-            if (wifiForceEnable_ && !wifiEnabled_) {
-                wifiEnabled_ = true;
-                datalinkWiFiConnectFunc(wifiEnabled_);
             }
 
             suspendCallerUntil(NOW() + 100*MILLISECONDS);
