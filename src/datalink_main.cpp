@@ -70,8 +70,8 @@ Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER
 Topic<bool> datalinkEnableWiFiConnect(DATALINK_ENABLE_WIFI_CONNECT, "Datalink enable wifi connect");
 
 //Topic used for the datalink heartbeat
-Topic<int64_t> datalinkHeartbeat(DATALINK_HEARTBEAT, "Datalink heartbeat");
-Topic<int64_t> datalinkHeartbeatInter(DATALINK_HEARTBEAT_INTER, "Datalink heartbeat intercomms");
+Topic<bool> datalinkHeartbeat(DATALINK_HEARTBEAT, "Datalink heartbeat");
+Topic<bool> datalinkHeartbeatInter(DATALINK_HEARTBEAT_INTER, "Datalink heartbeat intercomms");
 
 void datalinkWiFiConnectFunc(bool& enable) {
 
@@ -197,8 +197,8 @@ private:
     RODOS::CommBuffer<OrpeTelemetry> tmtIntBuf_; //Tmt to stm32 from tgt satellite ORPE
     RODOS::CommBuffer<ORPEState_t> sttIntBuf_; //Tmt to stm32 from tgt satellite ORPE
 
-    RODOS::CommBuffer<int64_t> heartbeatBuf_; //Heartbeat buffer
-    RODOS::CommBuffer<int64_t> heartbeatInterBuf_; //Heartbeat buffer for intercomms    
+    RODOS::CommBuffer<bool> heartbeatBuf_; //Heartbeat buffer
+    RODOS::CommBuffer<bool> heartbeatInterBuf_; //Heartbeat buffer for intercomms    
     
     //Subscribers for buffers
     RODOS::Subscriber cmdSelfSubr_;
@@ -354,7 +354,7 @@ public:
             }
 
             // Forward Heartbeat to intercomms
-            int64_t heartbeat;
+            bool heartbeat;
             if (heartbeatBuf_.getOnlyIfNewData(heartbeat)) {
                 #ifdef DATALINK_DEBUG_MESSAGES
                 PRINTF("Forwarding heartbeat to intercomms\n");
