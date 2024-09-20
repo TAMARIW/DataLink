@@ -162,6 +162,8 @@ public:
 
         int64_t testBegin = NOW();
 
+        int32_t lastID = -1;
+
         while (1) {
 
             outgoingData.publish(data);
@@ -192,6 +194,11 @@ public:
                 packetMisses++;
             }
 
+            //Count the number of missed packets if any.
+            if (newData && dataRcv.id != lastID+1) {
+                packetMisses += dataRcv.id - lastID - 1;
+            }
+
             if (incorrect) {
                 packetCorruption++;
                 PRINTF("INCORRECT! Looks like the data was corrupted.\n");
@@ -199,7 +206,7 @@ public:
 
             double rrt = (double)(time - dataRcv.sendTime)/MILLISECONDS;
 
-            if(newData && !incorrect)
+            if(newData && !incorrect && dataRcv.id == lastID+1) {
                 totalRRT += rrt;
 
             if (packetCounter%100 == 0) {   
