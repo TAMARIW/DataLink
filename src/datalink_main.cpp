@@ -181,6 +181,7 @@ public:
 
             if (heartbeatBuf_.getOnlyIfNewData(heartbeat)) {
                 lastHeartbeat_ = NOW();
+		wifiControl.setForceEnable(false);
             }
 
             if (NOW() - lastHeartbeat_ > 10*SECONDS) {
