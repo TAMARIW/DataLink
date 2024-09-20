@@ -198,13 +198,15 @@ public:
             }
 
             double rrt = (double)(time - dataRcv.sendTime)/MILLISECONDS;
-            totalRRT += rrt;
+
+            if(newData && !incorrect)
+                totalRRT += rrt;
 
             if (packetCounter%100 == 0) {   
 
-                float avgLatency = totalRRT/packetCounter/2;
+                float avgLatency = totalRRT/(packetCounter-packetMisses-packetCorruption)/2;
 
-                PRINTF("\nPackets: %d \nTime: %.3fs \nLatency: %f \nLosses: %d \nCorrupt: %d\n", packetCounter, float(double(timeSinceStart)/SECONDS), avgLatency, packetMisses, packetCorruption);
+                PRINTF("\nPackets: %d \nTime: %.3fs \nLatency: %fms \nLosses: %d \nCorrupt: %d\n", packetCounter, float(double(timeSinceStart)/SECONDS), avgLatency, packetMisses, packetCorruption);
 
             }
 
