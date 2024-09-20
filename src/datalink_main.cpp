@@ -158,6 +158,8 @@ public:
         uint32_t packetMisses = 0;
         uint32_t packetCorruption = 0;
 
+        double totalRRT = 0;
+
         int64_t testBegin = NOW();
 
         while (1) {
@@ -170,7 +172,8 @@ public:
             while (!(newData = datapacketBuf_.getOnlyIfNewData(dataRcv)) && NOW() - start < 1*SECONDS) 
                 yield();
             
-            int64_t time = NOW() - testBegin;
+            int64_t time = NOW();
+            int64_t timeSinceStart = time - testBegin;
 
             bool incorrect = false;
             if (newData) {
@@ -194,9 +197,14 @@ public:
                 PRINTF("INCORRECT! Looks like the data was corrupted.\n");
             }
 
+            double rrt = (double)(time - dataRcv.sendTime)/MILLISECONDS;
+            totalRRT += rrt;
+
             if (packetCounter%100 == 0) {   
 
-                PRINTF("\nPackets: %d \nTime: %.3fs \nLosses: %d \nCorrupt: %d\n", packetCounter, float(double(time)/SECONDS), packetMisses, packetCorruption);
+                float avgLatency = totalRRT/packetCounter/2;
+
+                PRINTF("\nPackets: %d \nTime: %.3fs \nLatency: %f \nLosses: %d \nCorrupt: %d\n", packetCounter, float(double(timeSinceStart)/SECONDS), avgLatency, packetMisses, packetCorruption);
 
             }
 
