@@ -77,8 +77,9 @@ void datalinkWiFiConnectFunc(bool& enable) {
 
     if (enable) {
         PRINTF("Enabling wifi connect\n");
-        std::system("sudo iwconfig wlan0 mode ad-hoc essid TMWNetwork key off");
-        std::system("sudo ifconfig wlan0 192.168.10.1 netmask 255.255.255.0 up");
+        //std::system("sudo iwconfig wlan0 mode ad-hoc essid TMWNetwork key off");
+        //std::system("sudo ifconfig wlan0 192.168.10.1 netmask 255.255.255.0 up");
+        std::system("sudo ifconfig wlan0 up");
     } else {
         PRINTF("Disabling wifi connect\n");
         std::system("sudo ifconfig wlan0 down");
