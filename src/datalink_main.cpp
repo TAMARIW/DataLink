@@ -98,6 +98,9 @@ private:
     CommBuffer<bool> datalinkWiFiConnectBuf_;
     Subscriber datalinkWiFiConnectSub_;
 
+    Atomic<bool> wifiForceEnable_ = false;
+    bool wifiEnabled_ = false;
+
 
 public:
 
@@ -114,6 +117,10 @@ public:
 
     }
 
+    void setForceEnable(bool enable) {
+        wifiForceEnable_ = enable;
+    }
+
     void run() override {
 
         bool enable;
@@ -122,9 +129,15 @@ public:
 
         while (1) {
 
-            if (datalinkWiFiConnectBuf_.getOnlyIfNewData(enable)) {
+            if (datalinkWiFiConnectBuf_.getOnlyIfNewData(enable) && !wifiForceEnable_) {
                 datalinkWiFiConnectFunc(enable);
+                wifiEnabled_ = enable;
                 //suspendCallerUntil(NOW() + 3000*MILLISECONDS);
+            }
+
+            if (wifiForceEnable_ && !wifiEnabled_) {
+                wifiEnabled_ = true;
+                datalinkWiFiConnectFunc(wifiEnabled_);
             }
 
             suspendCallerUntil(NOW() + 100*MILLISECONDS);
@@ -134,6 +147,54 @@ public:
     }
 
 } wifiControl;
+
+
+/**
+ * This thread watches the heartbeat and if no heartbeat has been received for a while, then the wifi will be forced to connect to prevent lockout from not external access.
+ */
+class LockoutProtection : public StaticThread<> {
+private:
+
+    int64_t lastHeartbeat_ = 0;
+
+    CommBuffer<bool> heartbeatBuf_;
+    Subscriber heartbeatSub_;
+
+
+public:
+
+    LockoutProtection() :
+        StaticThread<>("LockoutProtection"),
+        heartbeatSub_(datalinkHeartbeat, heartbeatBuf_)
+    {}
+
+
+    void init() override {
+
+    }
+
+    void run() override {
+
+        bool heartbeat;
+
+        while (1) {
+
+            if (heartbeatBuf_.getOnlyIfNewData(heartbeat)) {
+                lastHeartbeat_ = NOW();
+            }
+
+            if (NOW() - lastHeartbeat_ > 10*SECONDS) {
+                wifiControl.setForceEnable(true);
+            }
+
+            suspendCallerUntil(NOW() + 1000*MILLISECONDS);
+
+        }
+
+    }
+
+} lockoutProtection;
+
 
 /**
  * This class takes care of starting ORPE.
