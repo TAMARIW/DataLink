@@ -298,7 +298,7 @@ public:
         gatewayRouter.addTopicToExclude(DATALINK_ORPETELECOMMAND_INTER_TOPICID);
         gatewayRouter.addTopicToExclude(DATALINK_ORPESTATE_INTER_TOPICID);
 
-        gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT);
+        //gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT);
         //gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT_INTER);
 
         //Comms with STM32
