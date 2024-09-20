@@ -62,16 +62,14 @@ Topic<ORPEState_t> orpeIntSttTopic(DATALINK_ORPESTATE_INTER_TOPICID, "ORPE INTER
 
 
 //Topic for testing performance
-#define TEST_DATA_SIZE 100
+#define TEST_DATA_SIZE 100 - 4 - 8
 struct DataPacketDummy {
-    uint8_t[TEST_DATA_SIZE];
+    int64_t sendTime;
+    uint32_t id;
+    uint8_t data[TEST_DATA_SIZE];
 };
 Topic<DataPacketDummy> oncomingData(31000, "Oncoming data testing");
 Topic<DataPacketDummy> outgoingData(31001, "Outgoing data testing");
-
-void resenderFunc(DataPacketDummy &data) {
-    outgoingData.publish(data);
-}
 
 void resenderFunc(DataPacketDummy &data) {
     outgoingData.publish(data);
@@ -89,7 +87,7 @@ public:
 
     void init() override {
 
-        udp_gateway.addTopicsToForward(&outgoingData);
+        wifi_gateway.addTopicsToForward(&outgoingData);
 
     }
 
@@ -108,7 +106,6 @@ public:
         while (1) {
 
             data.sendTime = NOW();
-            timings.syncPut(data.sendTime);
 
             outgoingData.publish(data);
             data.id++;
@@ -127,22 +124,25 @@ public:
 class DatalinkPerfRecv : StaticThread<> {
 private:
 
-    CommBuffer<DataPacketDummy> dataBuf_;
+    CommBuffer<DataPacketDummy> datapacketBuf_;
     Subscriber datapacketSub_;
 
     
 
 public:
 
-    DatalinkManagment() :
+    DatalinkPerfRecv() :
         datapacketSub_(oncomingData, datapacketBuf_)
     {}
 
     void init() override {
 
         //Perf testing
-        udp_gateway.addTopicsToForward(&oncomingData);
-        udp_gateway.addTopicsToForward(&outgoingData);
+        wifi_gateway.addTopicsToForward(&oncomingData);
+        wifi_gateway.addTopicsToForward(&outgoingData);
+
+        gatewayRouter.addTopicToExclude(31000);
+        gatewayRouter.addTopicToExclude(31001);
 
     }
 
