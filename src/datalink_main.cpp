@@ -206,7 +206,7 @@ public:
 
             double rrt = (double)(time - dataRcv.sendTime)/MILLISECONDS;
 
-            if(newData && !incorrect && dataRcv.id == lastID+1) {
+            if(newData && !incorrect && dataRcv.id == lastID+1) 
                 totalRRT += rrt;
 
             if (packetCounter%100 == 0) {   
@@ -216,6 +216,8 @@ public:
                 PRINTF("\nPackets: %d \nTime: %.3fs \nLatency: %fms \nLosses: %d \nCorrupt: %d\n", packetCounter, float(double(timeSinceStart)/SECONDS), avgLatency, packetMisses, packetCorruption);
 
             }
+
+            lastID = dataRcv.id;
 
         }
 
