@@ -71,7 +71,7 @@ Topic<bool> datalinkEnableWiFiConnect(DATALINK_ENABLE_WIFI_CONNECT, "Datalink en
 
 //Topic used for the datalink heartbeat
 Topic<bool> datalinkHeartbeat(DATALINK_HEARTBEAT, "Datalink heartbeat");
-Topic<bool> datalinkHeartbeatInter(DATALINK_HEARTBEAT_INTER, "Datalink heartbeat intercomms");
+//Topic<bool> datalinkHeartbeatInter(DATALINK_HEARTBEAT_INTER, "Datalink heartbeat intercomms");
 
 void datalinkWiFiConnectFunc(bool& enable) {
 
@@ -259,7 +259,7 @@ private:
     RODOS::CommBuffer<ORPEState_t> sttIntBuf_; //Tmt to stm32 from tgt satellite ORPE
 
     RODOS::CommBuffer<bool> heartbeatBuf_; //Heartbeat buffer
-    RODOS::CommBuffer<bool> heartbeatInterBuf_; //Heartbeat buffer for intercomms    
+    //RODOS::CommBuffer<bool> heartbeatInterBuf_; //Heartbeat buffer for intercomms    
     
     //Subscribers for buffers
     RODOS::Subscriber cmdSelfSubr_;
@@ -268,7 +268,7 @@ private:
     RODOS::Subscriber tmtIntSubr_;
     RODOS::Subscriber sttIntSubr_;
     RODOS::Subscriber heartbeatSubr_;
-    RODOS::Subscriber heartbeatInterSubr_;
+    //RODOS::Subscriber heartbeatInterSubr_;
 
 public: 
 
@@ -278,8 +278,8 @@ public:
         cmdIntSubr_(orpeIntCmdTopic, cmdIntBuf_),
         tmtIntSubr_(orpeIntTmtTopic, tmtIntBuf_),
         sttIntSubr_(orpeIntSttTopic, sttIntBuf_),
-        heartbeatSubr_(datalinkHeartbeat, heartbeatBuf_),
-        heartbeatInterSubr_(datalinkHeartbeatInter, heartbeatInterBuf_)
+        heartbeatSubr_(datalinkHeartbeat, heartbeatBuf_)
+        //heartbeatInterSubr_(datalinkHeartbeatInter, heartbeatInterBuf_)
     {}
 
 
@@ -299,7 +299,7 @@ public:
         gatewayRouter.addTopicToExclude(DATALINK_ORPESTATE_INTER_TOPICID);
 
         gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT);
-        gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT_INTER);
+        //gatewayRouter.addTopicToExclude(DATALINK_HEARTBEAT_INTER);
 
         //Comms with STM32
         stm32_gateway.addTopicsToForward(&orpeSelfTmtTopic);
@@ -317,7 +317,7 @@ public:
         wifi_gateway.addTopicsToForward(&orpeIntCmdTopic);
         wifi_gateway.addTopicsToForward(&orpeIntSttTopic);
 
-        wifi_gateway.addTopicsToForward(&datalinkHeartbeatInter);
+        //wifi_gateway.addTopicsToForward(&datalinkHeartbeatInter);
 
     }
 
@@ -418,22 +418,22 @@ public:
             bool heartbeat;
             if (heartbeatBuf_.getOnlyIfNewData(heartbeat)) {
                 #ifdef DATALINK_DEBUG_MESSAGES
-                PRINTF("Forwarding heartbeat to intercomms\n");
+                PRINTF("Received heartbeat\n");
                 #endif
-                heartbeatInterSubr_.enable(false);
-                datalinkHeartbeatInter.publish(heartbeat);
-                heartbeatInterSubr_.enable(true);
+                //heartbeatInterSubr_.enable(false);
+                //datalinkHeartbeatInter.publish(heartbeat);
+                //heartbeatInterSubr_.enable(true);
             }
 
             // Forward Heartbeat from intercomms to stm32
-            if (heartbeatInterBuf_.getOnlyIfNewData(heartbeat)) {
+            /*if (heartbeatInterBuf_.getOnlyIfNewData(heartbeat)) {
                 #ifdef DATALINK_DEBUG_MESSAGES
                 PRINTF("Forwarding heartbeat from intercomms to stm32\n");
                 #endif
                 heartbeatSubr_.enable(false);
                 datalinkHeartbeat.publish(heartbeat);
                 heartbeatSubr_.enable(true);
-            }
+            }*/
 
             
             //Force udp gateway to update to make sure they capture new messages.
