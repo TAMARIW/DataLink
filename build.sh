@@ -1,3 +1,5 @@
+git submodule init
+git submodule update
 mkdir build
 cd build
 cmake -DCMAKE_TOOLCHAIN_FILE=../lib/rodos/cmake/port/posix.cmake ..
